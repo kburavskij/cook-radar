@@ -9,43 +9,45 @@ const text: Record<Language, Record<string, string>> = {
     'nav.today': 'Šiandien',
     'nav.recipes': 'Receptai',
     'nav.pantry': 'Atsargos',
-    'nav.shopping': 'Pirkiniai',
+    'nav.shopping': 'Pirkinių sąrašas',
     'nav.plan': 'Tavo virtuvė',
     'status.online': 'Prisijungta',
     'status.offline': 'Veikia neprisijungus',
-    'status.local': 'Išsaugota šiame telefone',
-    'status.offlineMessage': 'Nėra ryšio. Pakeitimai išsaugomi šiame telefone.',
+    'status.local': 'Išsaugota šiame įrenginyje',
+    'status.offlineMessage': 'Nėra ryšio. Pakeitimai išsaugomi šiame įrenginyje.',
     'language.label': 'Kalba',
     'language.lithuanian': 'Lietuvių',
     'language.english': 'English',
-    'home.eyebrow': 'ŠIANDIEN',
+    'home.eyebrow': 'Šiandien',
     'home.title': 'Ką gaminame šiandien?',
     'home.lede': 'Pasirink receptą pagal tai, ką jau turi namuose.',
-    'home.readyEyebrow': 'GALI GAMINTI DABAR',
+    'home.readyEyebrow': 'Gali gaminti dabar',
     'home.readyTitle': 'Maistas iš tavo atsargų',
-    'home.readyBody': 'Šie receptai nereikalauja papildomo apsipirkimo.',
+    'home.readyBody': 'Šiems receptams nieko papildomai nereikia pirkti.',
     'home.readyEmptyTitle': 'Dar trūksta kelių produktų',
-    'home.readyEmptyBody': 'Pridėk tai, ką turi namuose, ir pamatysi daugiau galimybių.',
+    'home.readyEmptyBody': 'Pridėk namuose turimus produktus ir pamatysi daugiau galimybių.',
     'home.readyAction': 'Rodyti receptus',
     'home.stats.pantry': 'produktų',
     'home.stats.recipes': 'receptų',
-    'home.stats.shopping': 'pirkti',
+    'home.stats.shopping': 'pirkinių',
     'home.sectionTitle': 'Gali gaminti dabar',
-    'home.sectionEmpty': 'Tavo receptų lentyna tuščia',
-    'home.sectionEmptyBody': 'Pridėk pirmą receptą, kurį nori prisiminti.',
+    'home.sectionEmpty': 'Receptų sąrašas tuščias',
+    'home.sectionEmptyBody': 'Pridėk pirmą receptą, kurį nori išsaugoti.',
     'home.tipTitle': 'Pradėk nuo to, ką turi',
-    'home.tipBody': 'Cook Radar parodo, ką gali pagaminti iš dabartinių atsargų.',
+    'home.tipBody': 'Cook Radar parodo, ką gali pagaminti iš namuose turimų produktų.',
     'common.addFood': 'Pridėti produktą',
     'common.addRecipe': 'Pridėti receptą',
-    'common.addItem': 'Pridėti prekę',
-    'common.viewAll': 'Rodyti visus',
+    'common.addItem': 'Pridėti produktą',
+    'common.viewAll': 'Rodyti daugiau',
+    'common.viewRecipes': 'Rodyti visus receptus',
+    'common.viewProducts': 'Rodyti visus produktus',
     'common.search': 'Ieškoti',
     'common.ready': 'Galima gaminti',
     'common.makeNow': 'Gaminti dabar',
-    'common.allIngredients': 'Viską turi',
-    'common.addMissing': 'Pridėti trūkstamus',
-    'common.missing': '{n} trūksta',
-    'common.toBuy': 'pirkti',
+    'common.allIngredients': 'Turi visas sudedamąsias dalis',
+    'common.addMissing': 'Pridėti trūkstamas sudedamąsias dalis',
+    'common.missing': 'Trūksta: {n}',
+    'common.toBuy': 'pirkinių',
     'common.cancel': 'Atšaukti',
     'common.save': 'Išsaugoti',
     'common.remove': 'Pašalinti',
@@ -53,6 +55,8 @@ const text: Record<Language, Record<string, string>> = {
     'common.close': 'Uždaryti',
     'common.clear': 'Išvalyti',
     'common.done': 'Atlikta',
+    'common.markBought': 'Pažymėti kaip nupirktą',
+    'common.markNotBought': 'Pažymėti kaip nenupirktą',
     'toast.recipeUpdated': 'Receptas atnaujintas.',
     'toast.recipeSaved': 'Receptas išsaugotas.',
     'toast.recipeRemoved': 'Receptas pašalintas.',
@@ -60,72 +64,74 @@ const text: Record<Language, Record<string, string>> = {
     'toast.foodAdded': 'Produktas pridėtas į atsargas.',
     'toast.foodRemoved': 'Produktas pašalintas iš atsargų.',
     'toast.shoppingAdded': 'Pridėta į pirkinių sąrašą.',
-    'toast.missingAdded': '{n} {word} pridėta į pirkinių sąrašą.',
-    'toast.haveEverything': 'Visus ingredientus jau turi.',
+    'toast.missingAdded': 'Trūkstami produktai įtraukti į pirkinių sąrašą.',
+    'toast.haveEverything': 'Jau turi visas sudedamąsias dalis.',
     'confirm.removeRecipe': 'Pašalinti šį receptą?',
-    'recipes.eyebrow': 'TAVO KOLEKCIJA',
+    'recipes.eyebrow': 'Tavo receptai',
     'recipes.title': 'Receptai',
-    'recipes.description': 'Išsaugok receptus ir matyk, ką gali pagaminti šiandien.',
+    'recipes.description': 'Išsaugok receptus ir sužinok, ką gali pagaminti šiandien.',
     'recipes.all': 'Visi',
-    'recipes.ready': 'Galiu gaminti',
+    'recipes.ready': 'Galima gaminti',
     'recipes.favorites': 'Mėgstami',
     'recipes.emptyTitle': 'Receptų dar nėra',
     'recipes.emptyBody': 'Pridėk receptą, kurį nori turėti po ranka.',
     'recipes.noResultsTitle': 'Receptų nerasta',
-    'recipes.noResultsBody': 'Pabandyk kitą paiešką arba nuimk filtrą.',
-    'pantry.eyebrow': 'KĄ TURI NAMUOSE',
+    'recipes.noResultsBody': 'Pabandyk kitą paiešką arba išvalyk filtrą.',
+    'pantry.eyebrow': 'Ką turi namuose',
     'pantry.title': 'Atsargos',
-    'pantry.description': 'Paprastas produktų sąrašas su metriniais kiekiais.',
-    'pantry.emptyTitle': 'Atsargos tuščios',
-    'pantry.emptyBody': 'Pridėk produktus, kuriuos turi namuose.',
+    'pantry.description': 'Namuose turimi produktai ir jų kiekiai.',
+    'pantry.emptyTitle': 'Nėra produktų',
+    'pantry.emptyBody': 'Pridėk namuose turimus produktus.',
     'pantry.updated': 'Atnaujinta',
     'pantry.useBy': 'Sunaudoti iki',
-    'shopping.eyebrow': 'KITAS APSIPIRKIMAS',
-    'shopping.title': 'Pirkiniai',
-    'shopping.description': 'Trūkstami produktai iš tavo receptų vienoje vietoje.',
-    'shopping.open': 'liko pirkti',
-    'shopping.emptyTitle': 'Sąrašas tuščias',
-    'shopping.emptyBody': 'Kai recepte ko nors trūks, pridėk tai čia.',
+    'shopping.eyebrow': 'Pirkinių sąrašas',
+    'shopping.title': 'Pirkinių sąrašas',
+    'shopping.description': 'Čia matysi receptams trūkstamus produktus.',
+    'shopping.open': 'Liko nupirkti',
+    'shopping.emptyTitle': 'Pirkinių sąrašas tuščias',
+    'shopping.emptyBody': 'Kai receptui ko nors trūks, pridėk tai į pirkinių sąrašą.',
     'shopping.allDone': 'Viskas nupirkta',
     'shopping.allDoneBody': 'Gali planuoti kitą patiekalą.',
     'shopping.bought': 'Nupirkta',
-    'shopping.clearBought': 'Išvalyti nupirktus',
-    'shopping.fromRecipe': 'Receptui',
+    'shopping.clearBought': 'Pašalinti nupirktus produktus',
+    'shopping.fromRecipe': 'Pagal receptą:',
     'shopping.addedByYou': 'Pridėta rankiniu būdu',
-    'modal.recipeDetails': 'RECEPTO INFORMACIJA',
+    'modal.recipeDetails': 'Recepto informacija',
     'modal.newRecipe': 'Naujas receptas',
     'modal.editRecipe': 'Redaguoti receptą',
     'modal.newFood': 'Pridėti produktą',
     'modal.editFood': 'Redaguoti produktą',
-    'modal.newShopping': 'Pridėti į pirkinius',
+    'modal.newShopping': 'Pridėti į pirkinių sąrašą',
     'form.recipeName': 'Recepto pavadinimas',
     'form.category': 'Kategorija',
     'form.description': 'Trumpas aprašymas',
-    'form.minutes': 'Laikas minutėmis',
+    'form.minutes': 'Gaminimo laikas (min.)',
     'form.servings': 'Porcijos',
     'form.foodName': 'Produkto pavadinimas',
     'form.quantity': 'Kiekis',
     'form.unit': 'Vienetas',
     'form.expiry': 'Sunaudoti iki',
     'form.optional': 'nebūtina',
-    'form.ingredients': 'Ingredientai',
+    'form.ingredients': 'Sudedamosios dalys',
     'form.ingredientsHint': 'Naudok gramus, kilogramus, mililitrus, litrus arba vienetus.',
-    'form.method': 'Gaminimas',
-    'form.methodHint': 'Vienas trumpas veiksmas viename žingsnyje.',
-    'form.addIngredient': 'Pridėti ingredientą',
+    'form.method': 'Gaminimo eiga',
+    'form.methodHint': 'Kiekviename žingsnyje aprašyk vieną veiksmą.',
+    'form.addIngredient': 'Pridėti sudedamąją dalį',
     'form.addStep': 'Pridėti žingsnį',
     'form.stepPlaceholder': 'Kas vyksta toliau?',
     'form.invalidRecipeName': 'Įrašyk recepto pavadinimą.',
-    'form.invalidIngredient': 'Pridėk bent vieną ingredientą.',
+    'form.invalidIngredient': 'Pridėk bent vieną sudedamąją dalį.',
     'form.invalidStep': 'Pridėk bent vieną gaminimo žingsnį.',
     'form.invalidFoodName': 'Įrašyk produkto pavadinimą.',
     'form.invalidQuantity': 'Kiekis turi būti didesnis už nulį.',
-    'detail.ingredients': 'Ingredientai',
-    'detail.method': 'Gaminimas',
+    'detail.ingredients': 'Sudedamosios dalys',
+    'detail.method': 'Gaminimo eiga',
     'detail.optional': 'nebūtina',
-    'detail.haveEverything': 'Viską turi',
+    'detail.haveEverything': 'Turi visas sudedamąsias dalis',
     'detail.steps': 'žingsniai',
-    'preview.a': 'A · Dienos planas',
+    'detail.servings': 'porc.',
+    'preview.label': 'Dizaino variantų perjungiklis',
+    'preview.a': 'A · Šiandienos planas',
     'preview.b': 'B · Radaras',
     'preview.c': 'C · Atsargos pirmiausia',
     'preview.previous': 'Ankstesnis variantas',
@@ -137,7 +143,7 @@ const text: Record<Language, Record<string, string>> = {
     'nav.today': 'Today',
     'nav.recipes': 'Recipes',
     'nav.pantry': 'Pantry',
-    'nav.shopping': 'Shopping',
+    'nav.shopping': 'Shopping list',
     'nav.plan': 'Your kitchen',
     'status.online': 'Online',
     'status.offline': 'Working offline',
@@ -167,6 +173,8 @@ const text: Record<Language, Record<string, string>> = {
     'common.addRecipe': 'Add recipe',
     'common.addItem': 'Add item',
     'common.viewAll': 'View all',
+    'common.viewRecipes': 'View all recipes',
+    'common.viewProducts': 'View all products',
     'common.search': 'Search',
     'common.ready': 'Ready to cook',
     'common.makeNow': 'Make this now',
@@ -181,6 +189,8 @@ const text: Record<Language, Record<string, string>> = {
     'common.close': 'Close',
     'common.clear': 'Clear',
     'common.done': 'Done',
+    'common.markBought': 'Mark as bought',
+    'common.markNotBought': 'Mark as not bought',
     'toast.recipeUpdated': 'Recipe updated.',
     'toast.recipeSaved': 'Recipe saved.',
     'toast.recipeRemoved': 'Recipe removed.',
@@ -253,6 +263,8 @@ const text: Record<Language, Record<string, string>> = {
     'detail.optional': 'optional',
     'detail.haveEverything': 'You have everything',
     'detail.steps': 'steps',
+    'detail.servings': 'servings',
+    'preview.label': 'Design prototype switcher',
     'preview.a': 'A · Today first',
     'preview.b': 'B · Radar',
     'preview.c': 'C · Pantry first',
@@ -301,17 +313,105 @@ const englishAliases: Record<string, string> = Object.keys(foodNames).reduce((al
 
 const recipeCopy: Record<string, Partial<Record<Language, { title: string; description: string; category: string; tags: string[]; steps: string[] }>>> = {
   'recipe-pasta': {
-    lt: { title: 'Kreminiai citrininiai makaronai', description: 'Šviesūs, švelnūs makaronai vakarienei, kai norisi gaminti greitai.', category: 'Greita vakarienė', tags: ['Vegetariška', '20 min'], steps: ['Išvirk spagečius pasūdytame vandenyje, kol suminkštės. Atidėk 100 ml virimo vandens.', 'Keptuvėje alyvuogių aliejuje apkepk cukiniją ir česnaką.', 'Įmaišyk grietinėlę, citrinos žievelę ir pusę parmezano. Praskiesk virimo vandeniu.', 'Sumaišyk su makaronais, užbaik citrinos sultimis ir likusiu parmezanu.'] },
+    lt: { title: 'Kreminiai citrininiai makaronai', description: 'Švelnaus skonio makaronai greitai vakarienei.', category: 'Greita vakarienė', tags: ['Vegetariška', '20 min'], steps: ['Išvirk spagečius pasūdytame vandenyje, kol suminkštės. Pasilik 100 ml makaronų virimo vandens.', 'Apkepk cukiniją ir česnaką alyvuogių aliejuje, kol suminkštės ir lengvai paruduos.', 'Įmaišyk grietinėlę, citrinos žievelę ir pusę parmezano. Praskiesk makaronų virimo vandeniu.', 'Sumaišyk su makaronais, pagardink citrinos sultimis ir patiek su likusiu parmezanu.'] },
   },
   'recipe-stew': {
-    lt: { title: 'Lęšių troškinys su pomidorais', description: 'Vieno puodo patiekalas, kurio užteks ir rytojaus pietums.', category: 'Vienas puodas', tags: ['Veganiška', 'Gaminti daugiau'], steps: ['Svogūną ir morkas apkepk su kuminu, kol svogūnas suminkštės.', 'Sudėk lęšius, pomidorus ir sultinį. Užvirk.', 'Virk 25 minutes, kol lęšiai suminkštės.', 'Jei nori, įmaišyk špinatus. Pagardink ir patiek su duona arba ryžiais.'] },
+    lt: { title: 'Lęšių troškinys su pomidorais', description: 'Vieno puodo patiekalas, kurio užteks ir rytojaus pietums.', category: 'Vienas puodas', tags: ['Veganiška', 'Daugiau porcijų'], steps: ['Svogūną ir morkas pakepink su kuminu, kol svogūnas suminkštės.', 'Sudėk lęšius, pomidorus ir sultinį. Užvirk.', 'Virk 25 minutes, kol lęšiai suminkštės.', 'Jei nori, įmaišyk špinatus. Pagardink pagal skonį ir patiek su duona arba ryžiais.'] },
   },
   'recipe-wraps': {
-    lt: { title: 'Traškūs avinžirnių suktinukai', description: 'Traškūs avinžirniai, vėsus jogurtas ir šviežios daržovės šiltame paplotėlyje.', category: 'Greiti pietūs', tags: ['Vegetariška', 'Daug skaidulų'], steps: ['Avinžirnius sumaišyk su aliejumi, rūkyta paprika ir žiupsniu druskos.', 'Kepk, kol kraštai taps traškūs.', 'Jogurtą sumaišyk su citrinos sultimis ir druska. Supjaustyk agurką ir svogūną.', 'Pašildyk paplotėlius ir pripildyk jogurto, daržovių bei avinžirnių.'] },
+    lt: { title: 'Paplotėliai su avinžirniais', description: 'Traškūs avinžirniai, gaivus jogurtas ir šviežios daržovės šiltame paplotėlyje.', category: 'Greiti pietūs', tags: ['Vegetariška', 'Daug skaidulų'], steps: ['Avinžirnius sumaišyk su aliejumi, rūkyta paprika ir žiupsniu druskos.', 'Kepk orkaitėje arba keptuvėje, kol kraštai taps traškūs.', 'Jogurtą sumaišyk su citrinos sultimis ir druska. Supjaustyk agurką ir svogūną.', 'Pašildyk paplotėlius ir pripildyk jogurto, daržovių bei avinžirnių.'] },
   },
   'recipe-salmon': {
-    lt: { title: 'Lašiša su daržovėmis vienoje skardoje', description: 'Lašiša ir daržovės vienoje skardoje su sūriu ir saldžiu padažu.', category: 'Vakarienė', tags: ['Pescetariška', 'Viena skarda'], steps: ['Įkaitink orkaitę iki 210 °C. Pakepk perpjautas bulves su aliejumi 18 minučių.', 'Miso pastą, medų ir šlakelį vandens sumaišyk į padažą.', 'Į skardą sudėk brokolį ir lašišą. Lašišą aptepk padažu.', 'Kepk dar 10–12 minučių. Jei nori, pabarstyk sezamais.'] },
+    lt: {
+      title: 'Vienoje skardoje kepta lašiša',
+      description: 'Lašiša ir daržovės vienoje skardoje su saldžiai sūriu padažu.',
+      category: 'Vakarienė',
+      tags: ['Pescetariška', 'Viena skarda'],
+      steps: [
+        'Įkaitink orkaitę iki 210 °C. Kepk perpjautas bulves su aliejumi 18 minučių.',
+        'Miso pastą, medų ir šlakelį vandens sumaišyk į padažą.',
+        'Į skardą sudėk brokolį ir lašišą. Lašišą aptepk padažu.',
+        'Kepk dar 10–12 minučių. Jei nori, pabarstyk sezamų sėklomis.',
+      ],
+    },
   },
+};
+
+type CountKind = 'product' | 'recipe' | 'shopping' | 'component' | 'step';
+type CountCase = 'nominative' | 'genitive' | 'accusative';
+type CountForms = { one: string; few: string; many: string };
+
+const countForm = (count: number): keyof CountForms => {
+  const absolute = Math.abs(count);
+  const lastTwo = absolute % 100;
+  const lastDigit = absolute % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return 'many';
+  if (lastDigit === 1) return 'one';
+  if (lastDigit >= 2 && lastDigit <= 9) return 'few';
+  return 'many';
+};
+
+const lithuanianCountForms: Record<CountKind, Record<CountCase, CountForms>> = {
+  product: {
+    nominative: { one: 'produktas', few: 'produktai', many: 'produktų' },
+    genitive: { one: 'produkto', few: 'produktų', many: 'produktų' },
+    accusative: { one: 'produktą', few: 'produktus', many: 'produktų' },
+  },
+  recipe: {
+    nominative: { one: 'receptas', few: 'receptai', many: 'receptų' },
+    genitive: { one: 'recepto', few: 'receptų', many: 'receptų' },
+    accusative: { one: 'receptą', few: 'receptus', many: 'receptų' },
+  },
+  shopping: {
+    nominative: { one: 'pirkinys', few: 'pirkiniai', many: 'pirkinių' },
+    genitive: { one: 'pirkinio', few: 'pirkinių', many: 'pirkinių' },
+    accusative: { one: 'pirkinį', few: 'pirkinius', many: 'pirkinių' },
+  },
+  component: {
+    nominative: { one: 'sudedamoji dalis', few: 'sudedamosios dalys', many: 'sudedamųjų dalių' },
+    genitive: { one: 'sudedamosios dalies', few: 'sudedamųjų dalių', many: 'sudedamųjų dalių' },
+    accusative: { one: 'sudedamąją dalį', few: 'sudedamąsias dalis', many: 'sudedamųjų dalių' },
+  },
+  step: {
+    nominative: { one: 'žingsnis', few: 'žingsniai', many: 'žingsnių' },
+    genitive: { one: 'žingsnio', few: 'žingsnių', many: 'žingsnių' },
+    accusative: { one: 'žingsnį', few: 'žingsnius', many: 'žingsnių' },
+  },
+};
+
+export const countWord = (count: number, kind: CountKind, language: Language, grammaticalCase: CountCase = 'nominative') => {
+  if (language === 'en') {
+    if (kind === 'product') return count === 1 ? 'item' : 'items';
+    if (kind === 'recipe') return count === 1 ? 'recipe' : 'recipes';
+    if (kind === 'shopping') return 'to buy';
+    if (kind === 'component') return count === 1 ? 'ingredient' : 'ingredients';
+    return count === 1 ? 'step' : 'steps';
+  }
+  return lithuanianCountForms[kind][grammaticalCase][countForm(count)];
+};
+
+export const formatMissingCount = (count: number, language: Language) => language === 'lt'
+  ? `Trūksta ${count} ${countWord(count, 'product', language, 'genitive')}`
+  : tr(language, 'common.missing', { n: count });
+
+export const formatReadyRecipeCount = (count: number, language: Language) => language === 'lt'
+  ? `Paruošta receptų: ${count}`
+  : `${count} recipe${count === 1 ? '' : 's'} ready now`;
+
+export const formatShoppingOpenCount = (count: number, language: Language) => language === 'lt'
+  ? `Liko nupirkti ${count} ${countWord(count, 'product', language, 'accusative')}`
+  : `${count} ${tr(language, 'shopping.open')}`;
+
+export const formatStepCount = (count: number, language: Language) => language === 'lt'
+  ? `Žingsnių: ${count}`
+  : `${count} ${count === 1 ? 'step' : 'steps'}`;
+
+export const formatMissingAdded = (count: number, language: Language) => {
+  if (language === 'en') return `${count} ingredient${count === 1 ? '' : 's'} added to your shopping list.`;
+  const form = countForm(count);
+  if (form === 'one') return `Į pirkinių sąrašą įtrauktas ${count} trūkstamas produktas.`;
+  if (form === 'few') return `Į pirkinių sąrašą įtraukti ${count} trūkstami produktai.`;
+  return `Į pirkinių sąrašą įtraukta ${count} trūkstamų produktų.`;
 };
 
 export const tr = (language: Language, key: string, values: Record<string, string | number> = {}) => {

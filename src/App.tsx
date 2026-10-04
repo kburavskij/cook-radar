@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { loadPantry, loadRecipes, loadShopping, savePantry, saveRecipes, saveShopping } from './storage';
 import type { Ingredient, PantryCategory, PantryDraft, PantryItem, Recipe, RecipeDraft, ShoppingDraft, ShoppingItem, Tab, Unit } from './types';
 import { UNITS } from './types';
-import { categoryLabel, foodLabel, ingredientLabel, recipeText, tr, unitLabel, type Language } from './i18n';
+import { categoryLabel, countWord, foodLabel, formatMissingAdded, formatMissingCount, formatReadyRecipeCount, formatShoppingOpenCount, formatStepCount, ingredientLabel, recipeText, tr, unitLabel, type Language } from './i18n';
 import { addOrMergeShopping, formatAmount, getMissingIngredients, getRecipeStatus, makeId, normalize } from './utils';
 
 type IconName =
@@ -180,8 +180,7 @@ function App() {
     const missing = getMissingIngredients(recipe, pantry);
     setShopping((current) => missing.reduce((list, ingredient) => addOrMergeShopping(list, ingredient, recipe.id), current));
     if (missing.length) {
-      const word = language === 'lt' ? (missing.length === 1 ? 'ingredientas' : 'ingredientai') : (missing.length === 1 ? 'ingredient' : 'ingredients');
-      showToast(tr(language, 'toast.missingAdded', { n: missing.length, word }));
+      showToast(formatMissingAdded(missing.length, language));
     } else showToast(tr(language, 'toast.haveEverything'));
   };
 
@@ -306,7 +305,7 @@ function TodayHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
   const suggestions = readyRecipes.length ? readyRecipes.slice(0, 4) : recipes.slice(0, 4);
   return <>
     <section className="welcome-block" data-reveal><p className="eyebrow">{tr(language, 'home.eyebrow')} · {formatToday(language)}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="ready-panel" data-reveal><div className="ready-panel-copy"><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? recipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2><p>{readyRecipes.length ? tr(language, 'home.readyBody') : tr(language, 'home.readyEmptyBody')}</p><button className="button button-primary" onClick={() => onChangeTab(readyRecipes.length ? 'recipes' : 'pantry')}>{readyRecipes.length ? tr(language, 'home.readyAction') : tr(language, 'common.addFood')} <Icon name="arrow" size={16} /></button></div><div className="ready-mark" aria-hidden="true"><span>{readyRecipes.length}</span><small>{language === 'lt' ? 'paruošta' : 'ready'}</small></div></section>
+    <section className="ready-panel" data-reveal><div className="ready-panel-copy"><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? formatReadyRecipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2><p>{readyRecipes.length ? tr(language, 'home.readyBody') : tr(language, 'home.readyEmptyBody')}</p><button className="button button-primary" onClick={() => onChangeTab(readyRecipes.length ? 'recipes' : 'pantry')}>{readyRecipes.length ? tr(language, 'home.readyAction') : tr(language, 'common.addFood')} <Icon name="arrow" size={16} /></button></div><div className="ready-mark" aria-hidden="true"><span>{readyRecipes.length}</span><small>{tr(language, 'common.ready')}</small></div></section>
     <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
     <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} />{suggestions.length ? <RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /> : <EmptyState language={language} icon="book" title={tr(language, 'home.sectionEmpty')} body={tr(language, 'home.sectionEmptyBody')} action={tr(language, 'common.addRecipe')} onAction={() => onChangeTab('recipes')} />}</section>
     <InfoNote language={language} />
@@ -318,7 +317,7 @@ function RadarHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
   const suggestions = readyRecipes.length ? readyRecipes.slice(0, 3) : recipes.slice(0, 3);
   return <>
     <section className="welcome-block compact-welcome" data-reveal><p className="eyebrow">{tr(language, 'home.eyebrow')}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="radar-panel" data-reveal><div className="radar-art" aria-hidden="true"><span className="radar-ring ring-one" /><span className="radar-ring ring-two" /><span className="radar-ring ring-three" /><span className="radar-core">{readyRecipes.length}</span>{readyRecipes.slice(0, 3).map((recipe, index) => <span className={`radar-dot dot-${index + 1}`} key={recipe.id}>{recipe.icon}</span>)}</div><div className="radar-copy"><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? recipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2><p>{readyRecipes.length ? tr(language, 'home.readyBody') : tr(language, 'home.readyEmptyBody')}</p></div></section>
+    <section className="radar-panel" data-reveal><div className="radar-art" aria-hidden="true"><span className="radar-ring ring-one" /><span className="radar-ring ring-two" /><span className="radar-ring ring-three" /><span className="radar-core">{readyRecipes.length}</span>{readyRecipes.slice(0, 3).map((recipe, index) => <span className={`radar-dot dot-${index + 1}`} key={recipe.id}>{recipe.icon}</span>)}</div><div className="radar-copy"><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? formatReadyRecipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2><p>{readyRecipes.length ? tr(language, 'home.readyBody') : tr(language, 'home.readyEmptyBody')}</p></div></section>
     <div className="quick-actions" data-reveal><button className="quick-action primary" onClick={() => onChangeTab('recipes')}><span><Icon name="search" size={20} /></span>{tr(language, 'home.readyAction')}</button><button className="quick-action" onClick={() => onChangeTab('pantry')}><span><Icon name="plus" size={20} /></span>{tr(language, 'common.addFood')}</button></div>
     <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
     <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} /><RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /></section>
@@ -331,15 +330,15 @@ function PantryFirstHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
   const suggestions = readyRecipes.length ? readyRecipes.slice(0, 3) : recipes.slice(0, 3);
   return <>
     <section className="welcome-block" data-reveal><p className="eyebrow">{tr(language, 'home.eyebrow')}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="meal-callout" data-reveal><div><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? recipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2></div><button className="button button-primary meal-action" onClick={() => onChangeTab('recipes')}>{tr(language, 'home.readyAction')} <span className="button-icon"><Icon name="arrow" size={16} /></span></button></section>
-    <section className="pantry-focus" data-reveal><div className="pantry-focus-head"><div><p className="eyebrow">{tr(language, 'pantry.eyebrow')}</p><h2>{pantry.length} <span>{tr(language, 'home.stats.pantry')}</span></h2></div><button className="button button-secondary" onClick={() => onChangeTab('pantry')}>{tr(language, 'common.viewAll')} <Icon name="arrow" size={16} /></button></div><div className="pantry-chip-list">{pantryPreview.map((item) => <span className="pantry-chip" key={item.id}><b>{foodLabel(item.name, language).charAt(0)}</b>{foodLabel(item.name, language)}<strong>{formatAmount(item.quantity)} {unitLabel(item.unit, language)}</strong></span>)}{!pantryPreview.length && <p className="muted-copy">{tr(language, 'pantry.emptyBody')}</p>}</div></section>
+    <section className="meal-callout" data-reveal><div><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? formatReadyRecipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2></div><button className="button button-primary meal-action" onClick={() => onChangeTab('recipes')}>{tr(language, 'home.readyAction')} <span className="button-icon"><Icon name="arrow" size={16} /></span></button></section>
+    <section className="pantry-focus" data-reveal><div className="pantry-focus-head"><div><p className="eyebrow">{tr(language, 'pantry.eyebrow')}</p><h2>{pantry.length} <span>{countWord(pantry.length, 'product', language)}</span></h2></div><button className="button button-secondary" onClick={() => onChangeTab('pantry')}>{tr(language, 'common.viewAll')} <Icon name="arrow" size={16} /></button></div><div className="pantry-chip-list">{pantryPreview.map((item) => <span className="pantry-chip" key={item.id}><b>{foodLabel(item.name, language).charAt(0)}</b>{foodLabel(item.name, language)}<strong>{formatAmount(item.quantity)} {unitLabel(item.unit, language)}</strong></span>)}{!pantryPreview.length && <p className="muted-copy">{tr(language, 'pantry.emptyBody')}</p>}</div></section>
     <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} /><RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /></section>
     <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
   </>;
 }
 
 function SummaryStrip({ language, pantry, recipes, shopping, onChangeTab }: { language: Language; pantry: number; recipes: number; shopping: number; onChangeTab: (tab: Tab) => void }) {
-  return <section className="summary-strip" data-reveal aria-label={tr(language, 'nav.plan')}><button onClick={() => onChangeTab('pantry')}><span className="summary-number">{pantry}</span><span>{tr(language, 'home.stats.pantry')}</span></button><button onClick={() => onChangeTab('recipes')}><span className="summary-number">{recipes}</span><span>{tr(language, 'home.stats.recipes')}</span></button><button onClick={() => onChangeTab('shopping')}><span className="summary-number">{shopping}</span><span>{tr(language, 'home.stats.shopping')}</span></button></section>;
+  return <section className="summary-strip" data-reveal aria-label={tr(language, 'nav.plan')}><button onClick={() => onChangeTab('pantry')}><span className="summary-number">{pantry}</span><span>{countWord(pantry, 'product', language)}</span></button><button onClick={() => onChangeTab('recipes')}><span className="summary-number">{recipes}</span><span>{countWord(recipes, 'recipe', language)}</span></button><button onClick={() => onChangeTab('shopping')}><span className="summary-number">{shopping}</span><span>{countWord(shopping, 'shopping', language)}</span></button></section>;
 }
 
 function SectionHeading({ language, eyebrow, title, actionLabel, onAction }: { language: Language; eyebrow: string; title: string; actionLabel: string; onAction: () => void }) {
@@ -352,7 +351,8 @@ function RecipeList({ language, recipes, recipeStatus, onOpenRecipe, onAddMissin
 
 function RecipeListRow({ language, recipe, status, onOpen, onAddMissing, onToggleFavorite }: { language: Language; recipe: Recipe; status: ReturnType<typeof getRecipeStatus>; onOpen: () => void; onAddMissing: () => void; onToggleFavorite?: () => void }) {
   const display = recipeText(recipe, language);
-  return <article className="recipe-row" data-reveal><button className={`recipe-row-main accent-${recipe.accent}`} onClick={onOpen} aria-label={`${display.title}. ${tr(language, status.ready ? 'common.ready' : 'common.addMissing')}`}><span className="recipe-mark">{recipe.icon}</span><span className="recipe-row-copy"><strong>{display.title}</strong><small>{display.category} · <Icon name="clock" size={13} /> {recipe.minutes} min</small></span><span className={`row-status ${status.ready ? 'is-ready' : 'is-missing'}`}>{status.ready ? <><Icon name="check" size={13} />{tr(language, 'common.ready')}</> : tr(language, 'common.missing', { n: status.missing.length })}</span><Icon name="arrow" size={18} /></button><div className="recipe-row-actions">{status.ready ? <span className="row-action-note"><Icon name="check" size={14} />{tr(language, 'common.makeNow')}</span> : <button className="inline-action" onClick={onAddMissing}><Icon name="plus" size={14} />{tr(language, 'common.addMissing')}</button>}{onToggleFavorite && <button className={`icon-button ${recipe.favorite ? 'is-favorite' : ''}`} onClick={onToggleFavorite} aria-label={recipe.favorite ? `${display.title}: ${tr(language, 'common.remove')}` : `${display.title}: ${tr(language, 'recipes.favorites')}`}><Icon name="heart" size={17} /></button>}</div></article>;
+  const statusLabel = status.ready ? tr(language, 'common.ready') : formatMissingCount(status.missing.length, language);
+  return <article className="recipe-row" data-reveal><button className={'recipe-row-main accent-' + recipe.accent} onClick={onOpen} aria-label={display.title + '. ' + statusLabel}><span className="recipe-mark">{recipe.icon}</span><span className="recipe-row-copy"><strong>{display.title}</strong><small>{display.category} · <Icon name="clock" size={13} /> {recipe.minutes} min</small></span><span className={'row-status ' + (status.ready ? 'is-ready' : 'is-missing')}>{status.ready ? <><Icon name="check" size={13} />{tr(language, 'common.ready')}</> : statusLabel}</span><Icon name="arrow" size={18} /></button><div className="recipe-row-actions">{status.ready ? <span className="row-action-note"><Icon name="check" size={14} />{tr(language, 'common.makeNow')}</span> : <button className="inline-action" onClick={onAddMissing}><Icon name="plus" size={14} />{tr(language, 'common.addMissing')}</button>}{onToggleFavorite && <button className={'icon-button ' + (recipe.favorite ? 'is-favorite' : '')} onClick={onToggleFavorite} aria-label={recipe.favorite ? display.title + ': ' + tr(language, 'common.remove') : display.title + ': ' + tr(language, 'recipes.favorites')}><Icon name="heart" size={17} /></button>}</div></article>;
 }
 
 function RecipesPage({ language, recipes, recipeStatus, filter, search, onFilter, onSearch, onAddRecipe, onOpenRecipe, onAddMissing, onToggleFavorite }: ViewProps & { recipes: Recipe[]; filter: 'all' | 'ready' | 'favorites'; search: string; onFilter: (filter: 'all' | 'ready' | 'favorites') => void; onSearch: (value: string) => void }) {
@@ -373,11 +373,12 @@ function ShoppingPage({ language, shopping, recipes, onToggle, onRemove, onClear
   const pending = shopping.filter((item) => !item.checked);
   const checked = shopping.filter((item) => item.checked);
   const recipeName = (id: string) => { const recipe = recipes.find((item) => item.id === id); return recipe ? recipeText(recipe, language).title : undefined; };
-  return <><PageHeader language={language} eyebrow="shopping.eyebrow" title={tr(language, 'shopping.title')} description={pending.length ? `${pending.length} ${tr(language, 'shopping.open')}.` : tr(language, 'shopping.description')} action={<button className="button button-primary" onClick={onAddShopping}><Icon name="plus" size={18} />{tr(language, 'common.addItem')}</button>} /><section className="shopping-panel" data-reveal><div className="shopping-panel-head"><div><p className="eyebrow">{tr(language, 'shopping.eyebrow')}</p><h2>{pending.length ? `${pending.length} ${tr(language, 'shopping.open')}` : tr(language, 'shopping.emptyTitle')}</h2></div>{pending.length > 0 && <span className="list-count"><strong>{pending.length}</strong></span>}</div>{pending.length ? <div className="shopping-list">{pending.map((item) => <ShoppingRow key={item.id} language={language} item={item} recipeName={item.sourceRecipeIds.map(recipeName).filter(Boolean)[0]} onToggle={() => onToggle(item.id)} onRemove={() => onRemove(item.id)} />)}</div> : <div className="list-empty"><span className="empty-check"><Icon name="check" size={22} /></span><div><strong>{tr(language, 'shopping.allDone')}</strong><p>{tr(language, 'shopping.allDoneBody')}</p></div></div>}</section>{checked.length > 0 && <section className="shopping-panel checked-panel" data-reveal><div className="shopping-panel-head"><div><p className="eyebrow">{tr(language, 'shopping.bought')}</p><h2>{checked.length}</h2></div><button className="text-button danger-text" onClick={onClearChecked}>{tr(language, 'shopping.clearBought')}</button></div><div className="shopping-list">{checked.map((item) => <ShoppingRow key={item.id} language={language} item={item} onToggle={() => onToggle(item.id)} onRemove={() => onRemove(item.id)} />)}</div></section>}<InfoNote language={language} /></>;
+  return <><PageHeader language={language} eyebrow="shopping.eyebrow" title={tr(language, 'shopping.title')} description={pending.length ? `${formatShoppingOpenCount(pending.length, language)}.` : tr(language, 'shopping.description')} action={<button className="button button-primary" onClick={onAddShopping}><Icon name="plus" size={18} />{tr(language, 'common.addItem')}</button>} /><section className="shopping-panel" data-reveal><div className="shopping-panel-head"><div><p className="eyebrow">{tr(language, 'shopping.eyebrow')}</p><h2>{pending.length ? formatShoppingOpenCount(pending.length, language) : tr(language, 'shopping.emptyTitle')}</h2></div>{pending.length > 0 && <span className="list-count"><strong>{pending.length}</strong></span>}</div>{pending.length ? <div className="shopping-list">{pending.map((item) => <ShoppingRow key={item.id} language={language} item={item} recipeName={item.sourceRecipeIds.map(recipeName).filter(Boolean)[0]} onToggle={() => onToggle(item.id)} onRemove={() => onRemove(item.id)} />)}</div> : <div className="list-empty"><span className="empty-check"><Icon name="check" size={22} /></span><div><strong>{tr(language, 'shopping.allDone')}</strong><p>{tr(language, 'shopping.allDoneBody')}</p></div></div>}</section>{checked.length > 0 && <section className="shopping-panel checked-panel" data-reveal><div className="shopping-panel-head"><div><p className="eyebrow">{tr(language, 'shopping.bought')}</p><h2>{checked.length}</h2></div><button className="text-button danger-text" onClick={onClearChecked}>{tr(language, 'shopping.clearBought')}</button></div><div className="shopping-list">{checked.map((item) => <ShoppingRow key={item.id} language={language} item={item} onToggle={() => onToggle(item.id)} onRemove={() => onRemove(item.id)} />)}</div></section>}<InfoNote language={language} /></>;
 }
 
 function ShoppingRow({ language, item, recipeName, onToggle, onRemove }: { language: Language; item: ShoppingItem; recipeName?: string; onToggle: () => void; onRemove: () => void }) {
-  return <div className={`shopping-row ${item.checked ? 'is-checked' : ''}`} data-reveal><button className="check-box" onClick={onToggle} aria-label={`${item.checked ? tr(language, 'common.done') : tr(language, 'common.addItem')} ${foodLabel(item.name, language)}`}>{item.checked && <Icon name="check" size={16} />}</button><div className="shopping-item-copy"><strong>{foodLabel(item.name, language)}</strong><span>{recipeName ? `${tr(language, 'shopping.fromRecipe')} ${recipeName}` : tr(language, 'shopping.addedByYou')}</span></div><span className="shopping-amount">{formatAmount(item.amount)} {unitLabel(item.unit, language)}</span><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div>;
+  const toggleLabel = item.checked ? 'common.markNotBought' : 'common.markBought';
+  return <div className={`shopping-row ${item.checked ? 'is-checked' : ''}`} data-reveal><button className="check-box" onClick={onToggle} aria-label={`${tr(language, toggleLabel)}: ${foodLabel(item.name, language)}`}>{item.checked && <Icon name="check" size={16} />}</button><div className="shopping-item-copy"><strong>{foodLabel(item.name, language)}</strong><span>{recipeName ? `${tr(language, 'shopping.fromRecipe')} ${recipeName}` : tr(language, 'shopping.addedByYou')}</span></div><span className="shopping-amount">{formatAmount(item.amount)} {unitLabel(item.unit, language)}</span><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div>;
 }
 
 function PageHeader({ language, eyebrow, title, description, action }: { language: Language; eyebrow: string; title: string; description: string; action: ReactNode }) {
@@ -393,13 +394,68 @@ function InfoNote({ language }: { language: Language }) {
 }
 
 function PrototypeSwitcher({ language, variant, onChange }: { language: Language; variant: DesignVariant; onChange: (delta: number) => void }) {
-  return <div className="prototype-switcher" aria-label="Design prototype switcher"><button onClick={() => onChange(-1)} aria-label={tr(language, 'preview.previous')}>‹</button><span>{tr(language, `preview.${variant}`)}</span><button onClick={() => onChange(1)} aria-label={tr(language, 'preview.next')}>›</button></div>;
+  return <div className="prototype-switcher" aria-label={tr(language, 'preview.label')}><button onClick={() => onChange(-1)} aria-label={tr(language, 'preview.previous')}>‹</button><span>{tr(language, `preview.${variant}`)}</span><button onClick={() => onChange(1)} aria-label={tr(language, 'preview.next')}>›</button></div>;
 }
 
 function RecipeDetails({ language, recipe, status, onClose, onEdit, onDelete, onAddMissing, onToggleFavorite }: { language: Language; recipe: Recipe; status: ReturnType<typeof getRecipeStatus>; onClose: () => void; onEdit: () => void; onDelete: () => void; onAddMissing: () => void; onToggleFavorite: () => void }) {
   const display = recipeText(recipe, language);
   const missingNames = new Set(status.missing.map((ingredient) => ingredient.id));
-  return <ModalShell language={language} title={display.title} eyebrow={display.category} onClose={onClose} wide><div className={`detail-visual accent-${recipe.accent}`}><span>{recipe.icon}</span><div><span className="detail-chip"><Icon name="clock" size={14} />{recipe.minutes} min</span><span className="detail-chip">{recipe.servings} {language === 'lt' ? 'porc.' : 'servings'}</span></div></div><div className="detail-body"><div className="detail-intro"><div><p>{display.description}</p><div className="tag-row">{display.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div></div><button className={`favorite-large ${recipe.favorite ? 'is-favorite' : ''}`} onClick={onToggleFavorite} aria-label={tr(language, 'recipes.favorites')}><Icon name="heart" size={20} /><span>{tr(language, 'recipes.favorites')}</span></button></div><div className="detail-columns"><div><div className="detail-heading"><h3>{tr(language, 'detail.ingredients')}</h3><span>{status.ready ? <span className="inline-success"><Icon name="check" size={14} />{tr(language, 'detail.haveEverything')}</span> : tr(language, 'common.missing', { n: status.missing.length })}</span></div><div className="ingredient-list">{recipe.ingredients.map((ingredient) => <div className={`ingredient-row ${missingNames.has(ingredient.id) ? 'is-missing' : ''}`} key={ingredient.id}><span className={`ingredient-check ${missingNames.has(ingredient.id) ? 'missing' : ''}`}>{missingNames.has(ingredient.id) ? <Icon name="plus" size={14} /> : <Icon name="check" size={14} />}</span><span>{ingredientLabel(ingredient, language)}{ingredient.optional && <small>{tr(language, 'detail.optional')}</small>}</span><strong>{formatAmount(ingredient.amount)} {unitLabel(ingredient.unit, language)}</strong></div>)}</div>{status.missing.length > 0 && <button className="button button-secondary full-button" onClick={onAddMissing}><Icon name="list" size={17} />{tr(language, 'common.addMissing')}</button>}</div><div className="method-column"><div className="detail-heading"><h3>{tr(language, 'detail.method')}</h3><span>{recipe.steps.length} {tr(language, 'detail.steps')}</span></div><ol className="method-list">{display.steps.map((step, index) => <li key={`${recipe.id}-step-${index}`}><span>{index + 1}</span><p>{step}</p></li>)}</ol></div></div><div className="detail-footer"><button className="button button-quiet" onClick={onDelete}><Icon name="trash" size={17} />{tr(language, 'common.remove')}</button><button className="button button-secondary" onClick={onEdit}><Icon name="edit" size={17} />{tr(language, 'common.edit')}</button></div></div></ModalShell>;
+  const statusLabel = status.ready ? null : formatMissingCount(status.missing.length, language);
+
+  return (
+    <ModalShell language={language} title={display.title} eyebrow={display.category} onClose={onClose} wide>
+      <div className={'detail-visual accent-' + recipe.accent}>
+        <span>{recipe.icon}</span>
+        <div>
+          <span className="detail-chip"><Icon name="clock" size={14} />{recipe.minutes} min</span>
+          <span className="detail-chip">{recipe.servings} {tr(language, 'detail.servings')}</span>
+        </div>
+      </div>
+      <div className="detail-body">
+        <div className="detail-intro">
+          <div>
+            <p>{display.description}</p>
+            <div className="tag-row">{display.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>
+          </div>
+          <button className={'favorite-large ' + (recipe.favorite ? 'is-favorite' : '')} onClick={onToggleFavorite} aria-label={tr(language, 'recipes.favorites')}>
+            <Icon name="heart" size={20} />
+            <span>{tr(language, 'recipes.favorites')}</span>
+          </button>
+        </div>
+        <div className="detail-columns">
+          <div>
+            <div className="detail-heading">
+              <h3>{tr(language, 'detail.ingredients')}</h3>
+              <span>{status.ready ? <span className="inline-success"><Icon name="check" size={14} />{tr(language, 'detail.haveEverything')}</span> : statusLabel}</span>
+            </div>
+            <div className="ingredient-list">
+              {recipe.ingredients.map((ingredient) => (
+                <div className={'ingredient-row ' + (missingNames.has(ingredient.id) ? 'is-missing' : '')} key={ingredient.id}>
+                  <span className={'ingredient-check ' + (missingNames.has(ingredient.id) ? 'missing' : '')}>
+                    {missingNames.has(ingredient.id) ? <Icon name="plus" size={14} /> : <Icon name="check" size={14} />}
+                  </span>
+                  <span>{ingredientLabel(ingredient, language)}{ingredient.optional && <small>{tr(language, 'detail.optional')}</small>}</span>
+                  <strong>{formatAmount(ingredient.amount)} {unitLabel(ingredient.unit, language)}</strong>
+                </div>
+              ))}
+            </div>
+            {status.missing.length > 0 && <button className="button button-secondary full-button" onClick={onAddMissing}><Icon name="list" size={17} />{tr(language, 'common.addMissing')}</button>}
+          </div>
+          <div className="method-column">
+            <div className="detail-heading">
+              <h3>{tr(language, 'detail.method')}</h3>
+              <span>{formatStepCount(recipe.steps.length, language)}</span>
+            </div>
+            <ol className="method-list">{display.steps.map((step, index) => <li key={index}><span>{index + 1}</span><p>{step}</p></li>)}</ol>
+          </div>
+        </div>
+        <div className="detail-footer">
+          <button className="button button-quiet" onClick={onDelete}><Icon name="trash" size={17} />{tr(language, 'common.remove')}</button>
+          <button className="button button-secondary" onClick={onEdit}><Icon name="edit" size={17} />{tr(language, 'common.edit')}</button>
+        </div>
+      </div>
+    </ModalShell>
+  );
 }
 
 function ModalShell({ language, title, eyebrow, children, onClose, wide = false }: { language: Language; title: string; eyebrow?: string; children: ReactNode; onClose: () => void; wide?: boolean }) {
@@ -454,11 +510,6 @@ function formatToday(language: Language) {
 function formatDate(iso: string | undefined, language: Language) {
   if (!iso) return '';
   return new Intl.DateTimeFormat(language === 'lt' ? 'lt-LT' : 'en-GB', { day: 'numeric', month: 'short' }).format(new Date(`${iso}T12:00:00`));
-}
-
-function recipeCount(count: number, language: Language) {
-  if (language === 'lt') return `${count} ${count === 1 ? 'receptas paruoštas' : 'receptai paruošti'}`;
-  return `${count} recipe${count === 1 ? '' : 's'} ready now`;
 }
 
 export default App;

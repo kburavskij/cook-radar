@@ -1,7 +1,7 @@
 {
   "name": "Cook Radar",
   "short_name": "Cook Radar",
-  "description": "Planuok patiekalus iš to, ką jau turi namuose.",
+  "description": "Planuok, ką gaminti iš namuose turimų produktų.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
