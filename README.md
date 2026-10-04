@@ -4,9 +4,7 @@ An offline-first PWA for deciding what to cook from the food already at home.
 
 Live app: <https://kburavskij.github.io/cook-radar/>
 
-The live app now uses the Pantry first layout. The other layouts remain available for comparison:
-
-Design comparison: [variant A, Today first](https://kburavskij.github.io/cook-radar/design-preview/?variant=a), [variant B, Radar](https://kburavskij.github.io/cook-radar/design-preview/?variant=b), or [variant C, Pantry first](https://kburavskij.github.io/cook-radar/design-preview/?variant=c).
+The live app uses the Today-first layout.
 
 ## Run locally
 
