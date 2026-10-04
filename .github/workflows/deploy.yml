@@ -2,7 +2,10 @@ name: Deploy Cook Radar
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - design/soft-structuralism
+  workflow_dispatch:
 
 permissions:
   contents: read
