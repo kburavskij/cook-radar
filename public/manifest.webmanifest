@@ -1,6 +1,6 @@
 {
-  "name": "mise",
-  "short_name": "mise",
+  "name": "Cook Radar",
+  "short_name": "Cook Radar",
   "description": "Plan meals from the food you already have.",
   "start_url": "./",
   "display": "standalone",

@@ -1,4 +1,4 @@
-name: Deploy mise
+name: Deploy Cook Radar
 
 on:
   push:

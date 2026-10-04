@@ -1,6 +1,8 @@
-# mise
+# Cook Radar
 
 An offline-first PWA for deciding what to cook from the food already at home.
+
+Live app: <https://kburavskij.github.io/cook-radar/>
 
 ## Run locally
 

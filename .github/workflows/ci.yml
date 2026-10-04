@@ -1,4 +1,4 @@
-name: Build mise
+name: Build Cook Radar
 
 on:
   push:

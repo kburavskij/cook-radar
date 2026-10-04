@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mise-shell-v1';
+const CACHE_NAME = 'cook-radar-shell-v1';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
