@@ -1,4 +1,5 @@
-import type { Ingredient, PantryCategory, Recipe, Unit } from './types';
+import type { CountKind as IngredientCountKind, Ingredient, PantryCategory, Recipe, Unit } from './types';
+import { canonicalIngredientKey, findIngredientCatalogEntry } from './ingredientCatalog';
 
 export type Language = 'lt' | 'en';
 
@@ -110,7 +111,7 @@ const text: Record<Language, Record<string, string>> = {
     'import.urlLabel': 'Recepto nuoroda',
     'import.urlPlaceholder': 'https://www.recipetineats.com/...',
     'import.sources': 'Palaikomos svetainės',
-    'import.sourceLanguage': 'Importuoto recepto tekstas lieka originalo kalba. Redaktoriuje jį galėsi pataisyti arba išversti.',
+    'import.sourceLanguage': 'Recepto pavadinimas ir eiga lieka originalo kalba. Produktų pavadinimai ir kiekiai suvienodinami, o prieš išsaugant juos gali pataisyti.',
     'import.usageNotice': 'Importuok receptus asmeniniam naudojimui. Šaltinio nuoroda išsaugoma kartu su receptu.',
     'import.submit': 'Importuoti receptą',
     'import.loading': 'Importuojamas receptas...',
@@ -136,7 +137,7 @@ const text: Record<Language, Record<string, string>> = {
     'form.expiry': 'Sunaudoti iki',
     'form.optional': 'nebūtina',
     'form.ingredients': 'Sudedamosios dalys',
-    'form.ingredientsHint': 'Naudok gramus, kilogramus, mililitrus, litrus arba vienetus.',
+    'form.ingredientsHint': 'Importuoti kiekiai suvienodinami į g, ml ir aiškius vienetus. Prieš išsaugodamas patikrink neaiškius kiekius.',
     'form.method': 'Gaminimo eiga',
     'form.methodHint': 'Kiekviename žingsnyje aprašyk vieną veiksmą.',
     'form.addIngredient': 'Pridėti sudedamąją dalį',
@@ -150,6 +151,7 @@ const text: Record<Language, Record<string, string>> = {
     'detail.ingredients': 'Sudedamosios dalys',
     'detail.method': 'Gaminimo eiga',
     'detail.optional': 'nebūtina',
+    'detail.amountUnknown': 'pagal poreikį',
     'detail.haveEverything': 'Turi visas sudedamąsias dalis',
     'detail.steps': 'žingsniai',
     'detail.servings': 'porc.',
@@ -263,7 +265,7 @@ const text: Record<Language, Record<string, string>> = {
     'import.urlLabel': 'Recipe link',
     'import.urlPlaceholder': 'https://www.recipetineats.com/...',
     'import.sources': 'Supported websites',
-    'import.sourceLanguage': 'Imported recipe text stays in its original language. You can edit or translate it before saving.',
+    'import.sourceLanguage': 'The recipe title and method stay in the source language. Ingredient names and quantities are normalized before you save them.',
     'import.usageNotice': 'Import recipes for personal use. The source link is saved with the recipe.',
     'import.submit': 'Import recipe',
     'import.loading': 'Importing recipe...',
@@ -289,7 +291,7 @@ const text: Record<Language, Record<string, string>> = {
     'form.expiry': 'Use by',
     'form.optional': 'optional',
     'form.ingredients': 'Ingredients',
-    'form.ingredientsHint': 'Use grams, kilograms, millilitres, litres, or pieces.',
+    'form.ingredientsHint': 'Imported quantities use grams, millilitres, and clear count units. Check any unknown amounts before saving.',
     'form.method': 'Method',
     'form.methodHint': 'Keep one short action per step.',
     'form.addIngredient': 'Add ingredient',
@@ -303,6 +305,7 @@ const text: Record<Language, Record<string, string>> = {
     'detail.ingredients': 'Ingredients',
     'detail.method': 'Method',
     'detail.optional': 'optional',
+    'detail.amountUnknown': 'as needed',
     'detail.haveEverything': 'You have everything',
     'detail.steps': 'steps',
     'detail.servings': 'servings',
@@ -459,10 +462,12 @@ export const tr = (language: Language, key: string, values: Record<string, strin
 
 export const normalizeFoodName = (name: string) => {
   const normalized = name.trim().toLowerCase().replace(/\s+/g, ' ');
-  return englishAliases[normalized] ?? normalized;
+  return canonicalIngredientKey(name) ?? englishAliases[normalized] ?? normalized;
 };
 
 export const foodLabel = (name: string, language: Language) => {
+  const catalogEntry = findIngredientCatalogEntry(name);
+  if (catalogEntry) return language === 'lt' ? catalogEntry.labelLt : catalogEntry.canonicalName;
   const canonical = normalizeFoodName(name);
   return language === 'lt' ? foodNames[canonical] ?? name : canonical.replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
@@ -483,6 +488,35 @@ const lithuanianUnits: Record<Unit, string> = {
 };
 
 export const unitLabel = (unit: Unit, language: Language) => language === 'lt' ? lithuanianUnits[unit] : unit;
+
+const countKindWords: Record<Exclude<IngredientCountKind, 'unknown'>, { en: [string, string]; lt: [string, string] }> = {
+  whole: { en: ['whole', 'whole'], lt: ['vnt.', 'vnt.'] },
+  clove: { en: ['clove', 'cloves'], lt: ['skiltelė', 'skiltelės'] },
+  can: { en: ['can', 'cans'], lt: ['skardinė', 'skardinės'] },
+  jar: { en: ['jar', 'jars'], lt: ['stiklainis', 'stiklainiai'] },
+  bottle: { en: ['bottle', 'bottles'], lt: ['butelis', 'buteliai'] },
+  packet: { en: ['packet', 'packets'], lt: ['pakelis', 'pakeliai'] },
+  bag: { en: ['bag', 'bags'], lt: ['maišelis', 'maišeliai'] },
+  box: { en: ['box', 'boxes'], lt: ['dėžutė', 'dėžutės'] },
+  bunch: { en: ['bunch', 'bunches'], lt: ['ryšulėlis', 'ryšulėliai'] },
+  head: { en: ['head', 'heads'], lt: ['galvutė', 'galvutės'] },
+  stalk: { en: ['stalk', 'stalks'], lt: ['stiebas', 'stiebai'] },
+  sprig: { en: ['sprig', 'sprigs'], lt: ['šakelė', 'šakelės'] },
+  slice: { en: ['slice', 'slices'], lt: ['riekelė', 'riekelės'] },
+  fillet: { en: ['fillet', 'fillets'], lt: ['filė', 'filė'] },
+  breast: { en: ['breast', 'breasts'], lt: ['krūtinėlė', 'krūtinėlės'] },
+  thigh: { en: ['thigh', 'thighs'], lt: ['šlaunelė', 'šlaunelės'] },
+  leaf: { en: ['leaf', 'leaves'], lt: ['lapas', 'lapai'] },
+  strip: { en: ['strip', 'strips'], lt: ['juostelė', 'juostelės'] },
+  egg: { en: ['egg', 'eggs'], lt: ['kiaušinis', 'kiaušiniai'] },
+  piece: { en: ['piece', 'pieces'], lt: ['vnt.', 'vnt.'] },
+};
+
+export const countKindLabel = (kind: IngredientCountKind | undefined, amount: number, language: Language) => {
+  if (!kind || kind === 'unknown' || kind === 'whole') return unitLabel('pcs', language);
+  const words = countKindWords[kind][language];
+  return words[amount === 1 ? 0 : 1];
+};
 
 export const recipeText = (recipe: Recipe, language: Language) => {
   const localized = recipeCopy[recipe.id]?.[language];

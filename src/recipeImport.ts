@@ -1,4 +1,5 @@
-import type { Ingredient, PantryCategory, RecipeDraft, Unit } from './types';
+import type { Ingredient, RecipeDraft } from './types';
+import { normalizeIngredientLines } from './ingredientNormalization';
 
 export type RecipeImportErrorCode = 'invalid-url' | 'unsupported-source' | 'not-found' | 'network' | 'parse' | 'restricted';
 
@@ -73,18 +74,6 @@ const fractionCharacters: Record<string, string> = {
   '⅞': ' 7/8',
 };
 
-const unitAliases: Array<{ unit: Unit; aliases: string[]; multiplier?: number }> = [
-  { unit: 'kg', aliases: ['kg', 'kgs', 'kilogram', 'kilograms'] },
-  { unit: 'g', aliases: ['g', 'gram', 'grams', 'gramme', 'grammes'] },
-  { unit: 'ml', aliases: ['ml', 'millilitre', 'millilitres', 'milliliter', 'milliliters'] },
-  { unit: 'l', aliases: ['l', 'litre', 'litres', 'liter', 'liters'] },
-  { unit: 'tbsp', aliases: ['tbsp', 'tbs', 'tablespoon', 'tablespoons'], multiplier: 1 },
-  { unit: 'tsp', aliases: ['tsp', 'teaspoon', 'teaspoons'], multiplier: 1 },
-  { unit: 'ml', aliases: ['cup', 'cups'], multiplier: 240 },
-  { unit: 'g', aliases: ['oz', 'ounce', 'ounces'], multiplier: 28.35 },
-  { unit: 'kg', aliases: ['lb', 'lbs', 'pound', 'pounds'], multiplier: 0.453592 },
-];
-
 const sourceForHostname = (hostname: string) => {
   const normalized = hostname.toLowerCase().replace(/^www\./, '');
   return RECIPE_IMPORT_SOURCES.find((source) => normalized === source.hostname || normalized.endsWith(`.${source.hostname}`));
@@ -138,71 +127,6 @@ const parseNumber = (value: string) => {
   if (fraction) return Number(fraction[1]) / Number(fraction[2]);
   const decimal = normalized.match(/(?:\d+(?:\.\d+)?|\.\d+)/);
   return decimal ? Number(decimal[0]) : undefined;
-};
-
-const roundQuantity = (value: number) => Math.round(value * 100) / 100;
-
-const unitFromText = (value: string) => {
-  const normalized = value.toLowerCase().replace(/[(),]/g, ' ').replace(/\s+/g, ' ').trim();
-  let matchResult: { unit: Unit; multiplier: number; index: number } | undefined;
-  for (const entry of unitAliases) {
-    for (const alias of entry.aliases) {
-      const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const match = new RegExp(`(?:^|\\s|\\d)${escaped}(?=\\s|$|[/.,])`, 'i').exec(normalized);
-      if (match) {
-        const index = match.index + (match[0].length - alias.length);
-        if (!matchResult || index < matchResult.index) matchResult = { unit: entry.unit, multiplier: entry.multiplier ?? 1, index };
-      }
-    }
-  }
-  if (matchResult) return matchResult;
-  if (/\b(cloves?|eggs?|pieces?|piece|cans?|jars?|bunch(?:es)?|heads?|stalks?|sprigs?|leaves?|slices?|fillets?|breasts?|thighs?)\b/i.test(normalized)) {
-    return { unit: 'pcs' as Unit, multiplier: 1 };
-  }
-  return undefined;
-};
-
-const cleanIngredientName = (value: string) => value
-  .replace(/^[-•*]\s*/, '')
-  .replace(/\s+/g, ' ')
-  .replace(/\s*,\s*$/, '')
-  .trim();
-
-const guessCategory = (name: string): PantryCategory => {
-  const normalized = name.toLowerCase();
-  if (/milk|cream|cheese|parmesan|mozzarella|yogurt|yoghurt|butter|sour cream|feta|ricotta/.test(normalized)) return 'Dairy';
-  if (/chicken|turkey|beef|pork|lamb|steak|salmon|tuna|fish|shrimp|prawn|meat|egg/.test(normalized)) return 'Protein';
-  if (/flour|rice|pasta|spaghetti|noodle|bread|oat|lentil|bean|chickpea|couscous|quinoa|tortilla|wrap|stock|broth|tomato paste|canned/.test(normalized)) return 'Dry goods';
-  if (/salt|pepper|paprika|cumin|cinnamon|oregano|basil|thyme|rosemary|spice|oil|vinegar|soy sauce|sauce|honey|sugar/.test(normalized)) return 'Seasoning';
-  if (/apple|avocado|banana|berry|broccoli|carrot|celery|cucumber|garlic|ginger|herb|kale|lemon|lime|mushroom|onion|parsley|potato|spinach|tomato|vegetable|zucchini|courgette|pepper/.test(normalized)) return 'Produce';
-  return 'Other';
-};
-
-const ingredientFromParts = (amountText: string, unitText: string, nameText: string, optional = false): Ingredient => {
-  const rawAmount = amountText.trim();
-  const parsedAmount = parseNumber(rawAmount) ?? 1;
-  const detected = unitFromText(`${unitText} ${rawAmount}`);
-  const amount = roundQuantity(parsedAmount * (detected?.multiplier ?? 1));
-  const unit = detected?.unit ?? 'pcs';
-  const name = cleanIngredientName(nameText) || cleanIngredientName(`${unitText} ${rawAmount}`) || 'Ingredient';
-  return { id: crypto.randomUUID(), name, amount: amount > 0 ? amount : 1, unit, category: guessCategory(name), optional };
-};
-
-const ingredientFromLine = (line: string): Ingredient => {
-  const clean = cleanIngredientName(line);
-  const amountMatch = clean.match(/^((?:\d+(?:[.,]\d+)?|\d+\s+\d+\s*\/\s*\d+|\d+\s*\/\s*\d+|[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])(?:\s*[-–]\s*(?:\d+(?:[.,]\d+)?|\d+\s*\/\s*\d+))?)(?:\s+|$)(.*)$/u);
-  if (!amountMatch) return ingredientFromParts('1', '', clean, /\b(to taste|as needed|if using|optional)\b/i.test(clean));
-
-  const amountText = amountMatch[1];
-  let rest = amountMatch[2].trim();
-  let unitText = '';
-  const unitMatch = rest.match(/^((?:cups?|tbsp|tbs|tablespoons?|tsp|teaspoons?|kg|kgs?|kilograms?|g|grams?|grammes?|ml|millilit(?:re|er)s?|l|lit(?:re|er)s?|oz|ounces?|lbs?|pounds?|cloves?|eggs?|pieces?|cans?|jars?|bunch(?:es)?|heads?|stalks?|sprigs?|leaves?|slices?|fillets?|breasts?|thighs?))(?:\s+|$)(.*)$/i);
-  if (unitMatch) {
-    unitText = unitMatch[1];
-    rest = unitMatch[2];
-  }
-  const optional = /\b(optional|if using|to taste|as needed)\b/i.test(rest) || /\b(optional|if using|to taste|as needed)\b/i.test(clean);
-  return ingredientFromParts(amountText, unitText, rest, optional);
 };
 
 const durationToMinutes = (value: string) => {
@@ -295,7 +219,7 @@ const parseJsonLd = (document: Document): ParsedRecipe | undefined => {
   if (freeAccess === false || (typeof freeAccess === 'string' && freeAccess.toLowerCase() === 'false') || document.querySelector('.zephr-locked-content')) {
     throw new RecipeImportError('restricted', 'This recipe is not available for free import.');
   }
-  const ingredients = recipe.recipeIngredient.flatMap((value) => typeof value === 'string' ? [ingredientFromLine(value)] : []);
+  const ingredients = recipe.recipeIngredient.flatMap((value) => typeof value === 'string' ? normalizeIngredientLines(value) : []);
   const steps = jsonLdInstructions(recipe.recipeInstructions);
   if (!ingredients.length || !steps.length) return undefined;
   const title = typeof recipe.name === 'string' ? recipe.name.trim() : '';
@@ -325,7 +249,9 @@ const parseWprm = (document: Document): ParsedRecipe | undefined => {
     const amount = firstText(node, ['.wprm-recipe-ingredient-amount']);
     const unit = firstText(node, ['.wprm-recipe-ingredient-unit']);
     const name = firstText(node, ['.wprm-recipe-ingredient-name']) || textContent(node);
-    return name ? [ingredientFromParts(amount || '1', unit, name, node.classList.contains('wprm-recipe-ingredient-optional'))] : [];
+    if (!name) return [];
+    const sourceLine = [amount, unit, name].filter(Boolean).join(' ');
+    return normalizeIngredientLines(sourceLine).map((ingredient) => ({ ...ingredient, optional: ingredient.optional || node.classList.contains('wprm-recipe-ingredient-optional') }));
   });
   const steps = [...root.querySelectorAll('.wprm-recipe-instruction')].map((node) => firstText(node, ['.wprm-recipe-instruction-text']) || textContent(node)).filter(Boolean);
   if (!ingredients.length || !steps.length) return undefined;
@@ -355,7 +281,7 @@ const parseTasty = (document: Document): ParsedRecipe | undefined => {
     .filter((node) => !node.classList.contains('tasty-recipes-ingredients-header'))
     .map((node) => textContent(node))
     .filter(Boolean)
-    .map(ingredientFromLine);
+    .flatMap(normalizeIngredientLines);
   const steps = [...root.querySelectorAll('.tasty-recipe-instructions li, .tasty-recipes-instructions li')]
     .map((node) => textContent(node)).filter(Boolean);
   if (!ingredients.length || !steps.length) return undefined;

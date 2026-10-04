@@ -32,3 +32,11 @@ text in the source language so you can review and edit it before saving.
 
 The current recipe-source research is in
 [`research/recipe-import-source-audit.md`](research/recipe-import-source-audit.md).
+
+Imported ingredient names and quantities are normalized through the semantic
+catalog in [`src/ingredientCatalog.ts`](src/ingredientCatalog.ts). The parser
+keeps preparation notes, recognizes count kinds such as cloves and cans, and
+matches spoon quantities with millilitres when checking pantry stock.
+
+The normalization decisions and source examples are in
+[`research/recipe-normalization-audit.md`](research/recipe-normalization-audit.md).

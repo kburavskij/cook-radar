@@ -1,5 +1,7 @@
 import type { PantryItem, Recipe, ShoppingItem } from './types';
 import { starterPantry, starterRecipes, starterShopping } from './data';
+import { findIngredientCatalogEntry } from './ingredientCatalog';
+import { normalizeIngredientRecord } from './ingredientNormalization';
 
 const keys = {
   recipes: 'cook-radar:recipes:v1',
@@ -35,9 +37,23 @@ const readWithMigration = <T>(key: string, legacyKey: string, fallback: T): T =>
   return current;
 };
 
-export const loadRecipes = (): Recipe[] => readWithMigration(keys.recipes, legacyKeys.recipes, starterRecipes);
-export const loadPantry = (): PantryItem[] => readWithMigration(keys.pantry, legacyKeys.pantry, starterPantry);
-export const loadShopping = (): ShoppingItem[] => readWithMigration(keys.shopping, legacyKeys.shopping, starterShopping);
+const normalizeInventoryItem = <T extends PantryItem | ShoppingItem>(item: T): T => {
+  const catalogEntry = findIngredientCatalogEntry(item.name);
+  return {
+    ...item,
+    ingredientKey: catalogEntry?.key ?? item.ingredientKey,
+    name: catalogEntry?.canonicalName ?? item.name.trim(),
+    category: catalogEntry?.category ?? item.category,
+    // Legacy inventory quantities used `pcs` without saying what one piece
+    // means. Keep those records compatible with any count kind until the user
+    // confirms the interpretation instead of guessing from the food name.
+    countKind: item.countKind ?? 'unknown',
+  };
+};
+
+export const loadRecipes = (): Recipe[] => readWithMigration(keys.recipes, legacyKeys.recipes, starterRecipes).map((recipe) => ({ ...recipe, ingredients: recipe.ingredients.map(normalizeIngredientRecord) }));
+export const loadPantry = (): PantryItem[] => readWithMigration(keys.pantry, legacyKeys.pantry, starterPantry).map(normalizeInventoryItem);
+export const loadShopping = (): ShoppingItem[] => readWithMigration(keys.shopping, legacyKeys.shopping, starterShopping).map(normalizeInventoryItem);
 
 export const saveRecipes = (recipes: Recipe[]) => window.localStorage.setItem(keys.recipes, JSON.stringify(recipes));
 export const savePantry = (pantry: PantryItem[]) => window.localStorage.setItem(keys.pantry, JSON.stringify(pantry));

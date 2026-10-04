@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { loadPantry, loadRecipes, loadShopping, savePantry, saveRecipes, saveShopping } from './storage';
 import type { Ingredient, PantryCategory, PantryDraft, PantryItem, Recipe, RecipeDraft, ShoppingDraft, ShoppingItem, Tab, Unit } from './types';
 import { UNITS } from './types';
-import { categoryLabel, countWord, foodLabel, formatMissingAdded, formatMissingCount, formatReadyRecipeCount, formatShoppingOpenCount, formatStepCount, ingredientLabel, recipeText, tr, unitLabel, type Language } from './i18n';
+import { findIngredientCatalogEntry } from './ingredientCatalog';
+import { normalizeIngredientRecord } from './ingredientNormalization';
+import { categoryLabel, countKindLabel, countWord, foodLabel, formatMissingAdded, formatMissingCount, formatReadyRecipeCount, formatShoppingOpenCount, formatStepCount, ingredientLabel, recipeText, tr, unitLabel, type Language } from './i18n';
 import { getRecipeImportSource, importRecipeFromUrl, RECIPE_IMPORT_SOURCES, RecipeImportError } from './recipeImport';
 import { addOrMergeShopping, formatAmount, getMissingIngredients, getRecipeStatus, makeId, normalize } from './utils';
 
@@ -53,6 +55,18 @@ const emptyRecipe: RecipeDraft = {
 
 const emptyPantry: PantryDraft = { name: '', quantity: 1, unit: 'pcs', category: 'Produce', expiresAt: '' };
 const emptyShopping: ShoppingDraft = { name: '', amount: 1, unit: 'pcs', category: 'Other' };
+
+const measuredAmountLabel = (amount: number, unit: Unit, language: Language, countKind?: Ingredient['countKind'], amountMax?: number) => {
+  const amountText = amountMax === undefined || amountMax === amount
+    ? formatAmount(amount)
+    : `${formatAmount(amount)}–${formatAmount(amountMax)}`;
+  const label = unit === 'pcs' ? countKindLabel(countKind, amount, language) : unitLabel(unit, language);
+  return `${amountText} ${label}`;
+};
+
+const ingredientAmountLabel = (ingredient: Ingredient, language: Language) => ingredient.quantityKnown === false
+  ? ingredient.note || tr(language, 'detail.amountUnknown')
+  : measuredAmountLabel(ingredient.amount, ingredient.unit, language, ingredient.countKind, ingredient.amountMax);
 type ViewProps = {
   language: Language;
   recipes: Recipe[];
@@ -173,11 +187,12 @@ function App() {
   };
 
   const saveRecipe = (draft: RecipeDraft, existing: Recipe | null) => {
+    const normalizedDraft = { ...draft, ingredients: draft.ingredients.map(normalizeIngredientRecord) };
     if (existing) {
-      setRecipes((current) => current.map((recipe) => recipe.id === existing.id ? { ...draft, id: existing.id, createdAt: existing.createdAt } : recipe));
+      setRecipes((current) => current.map((recipe) => recipe.id === existing.id ? { ...normalizedDraft, id: existing.id, createdAt: existing.createdAt } : recipe));
       showToast(tr(language, 'toast.recipeUpdated'));
     } else {
-      setRecipes((current) => [{ ...draft, id: makeId('recipe'), createdAt: new Date().toISOString() }, ...current]);
+      setRecipes((current) => [{ ...normalizedDraft, id: makeId('recipe'), createdAt: new Date().toISOString() }, ...current]);
       showToast(tr(language, 'toast.recipeSaved'));
     }
     setEditingRecipe(null);
@@ -214,12 +229,20 @@ function App() {
   };
 
   const savePantryItem = (draft: PantryDraft, existing: PantryItem | null) => {
+    const catalogEntry = findIngredientCatalogEntry(draft.name);
+    const normalizedDraft: PantryDraft = {
+      ...draft,
+      ingredientKey: catalogEntry?.key ?? draft.ingredientKey,
+      name: catalogEntry?.canonicalName ?? draft.name.trim(),
+      category: catalogEntry?.category ?? draft.category,
+      countKind: draft.countKind ?? (existing ? undefined : catalogEntry?.defaultCountKind),
+    };
     const updatedAt = new Date().toISOString();
     if (existing) {
-      setPantry((current) => current.map((item) => item.id === existing.id ? { ...draft, id: existing.id, updatedAt } : item));
+      setPantry((current) => current.map((item) => item.id === existing.id ? { ...normalizedDraft, id: existing.id, updatedAt } : item));
       showToast(tr(language, 'toast.foodUpdated'));
     } else {
-      setPantry((current) => [{ ...draft, id: makeId('pantry'), updatedAt }, ...current]);
+      setPantry((current) => [{ ...normalizedDraft, id: makeId('pantry'), updatedAt }, ...current]);
       showToast(tr(language, 'toast.foodAdded'));
     }
     setEditingPantry(null);
@@ -231,7 +254,15 @@ function App() {
   };
 
   const addShoppingItem = (draft: ShoppingDraft) => {
-    setShopping((current) => [...current, { ...draft, id: makeId('shopping'), checked: false, sourceRecipeIds: [] }]);
+    const catalogEntry = findIngredientCatalogEntry(draft.name);
+    const normalizedDraft: ShoppingDraft = {
+      ...draft,
+      ingredientKey: catalogEntry?.key ?? draft.ingredientKey,
+      name: catalogEntry?.canonicalName ?? draft.name.trim(),
+      category: catalogEntry?.category ?? draft.category,
+      countKind: catalogEntry?.defaultCountKind ?? draft.countKind,
+    };
+    setShopping((current) => [...current, { ...normalizedDraft, id: makeId('shopping'), checked: false, sourceRecipeIds: [] }]);
     setShowShoppingEditor(false);
     showToast(tr(language, 'toast.shoppingAdded'));
   };
@@ -329,7 +360,7 @@ function PantryPage({ language, pantry, search, onSearch, onAdd, onEdit, onRemov
 
 function PantryRow({ language, item, onEdit, onRemove }: { language: Language; item: PantryItem; onEdit: () => void; onRemove: () => void }) {
   const isSoon = item.expiresAt && new Date(`${item.expiresAt}T23:59:59`).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000;
-  return <div className="pantry-row" data-reveal><span className={`food-avatar category-${item.category.toLowerCase().replace(' ', '-')}`}>{foodLabel(item.name, language).charAt(0)}</span><div className="pantry-item-name"><strong>{foodLabel(item.name, language)}</strong><span>{isSoon ? <><Icon name="calendar" size={14} />{tr(language, 'pantry.useBy')} {formatDate(item.expiresAt, language)}</> : `${tr(language, 'pantry.updated')} ${formatDate(item.updatedAt.slice(0, 10), language)}`}</span></div><span className="pantry-quantity"><strong>{formatAmount(item.quantity)}</strong> {unitLabel(item.unit, language)}</span><div className="row-actions"><button className="icon-button" onClick={onEdit} aria-label={`${tr(language, 'common.edit')} ${foodLabel(item.name, language)}`}><Icon name="edit" size={17} /></button><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div></div>;
+  return <div className="pantry-row" data-reveal><span className={`food-avatar category-${item.category.toLowerCase().replace(' ', '-')}`}>{foodLabel(item.name, language).charAt(0)}</span><div className="pantry-item-name"><strong>{foodLabel(item.name, language)}</strong><span>{isSoon ? <><Icon name="calendar" size={14} />{tr(language, 'pantry.useBy')} {formatDate(item.expiresAt, language)}</> : `${tr(language, 'pantry.updated')} ${formatDate(item.updatedAt.slice(0, 10), language)}`}</span></div><span className="pantry-quantity"><strong>{measuredAmountLabel(item.quantity, item.unit, language, item.countKind)}</strong></span><div className="row-actions"><button className="icon-button" onClick={onEdit} aria-label={`${tr(language, 'common.edit')} ${foodLabel(item.name, language)}`}><Icon name="edit" size={17} /></button><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div></div>;
 }
 
 function ShoppingPage({ language, shopping, recipes, onToggle, onRemove, onClearChecked, onAddShopping }: ViewProps & { onToggle: (id: string) => void; onRemove: (id: string) => void; onClearChecked: () => void }) {
@@ -341,7 +372,7 @@ function ShoppingPage({ language, shopping, recipes, onToggle, onRemove, onClear
 
 function ShoppingRow({ language, item, recipeName, onToggle, onRemove }: { language: Language; item: ShoppingItem; recipeName?: string; onToggle: () => void; onRemove: () => void }) {
   const toggleLabel = item.checked ? 'common.markNotBought' : 'common.markBought';
-  return <div className={`shopping-row ${item.checked ? 'is-checked' : ''}`} data-reveal><button className="check-box" onClick={onToggle} aria-label={`${tr(language, toggleLabel)}: ${foodLabel(item.name, language)}`}>{item.checked && <Icon name="check" size={16} />}</button><div className="shopping-item-copy"><strong>{foodLabel(item.name, language)}</strong><span>{recipeName ? `${tr(language, 'shopping.fromRecipe')} ${recipeName}` : tr(language, 'shopping.addedByYou')}</span></div><span className="shopping-amount">{formatAmount(item.amount)} {unitLabel(item.unit, language)}</span><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div>;
+  return <div className={`shopping-row ${item.checked ? 'is-checked' : ''}`} data-reveal><button className="check-box" onClick={onToggle} aria-label={`${tr(language, toggleLabel)}: ${foodLabel(item.name, language)}`}>{item.checked && <Icon name="check" size={16} />}</button><div className="shopping-item-copy"><strong>{foodLabel(item.name, language)}</strong><span>{recipeName ? `${tr(language, 'shopping.fromRecipe')} ${recipeName}` : tr(language, 'shopping.addedByYou')}</span></div><span className="shopping-amount">{item.quantityKnown === false ? item.note || tr(language, 'detail.amountUnknown') : measuredAmountLabel(item.amount, item.unit, language, item.countKind, item.amountMax)}</span><button className="icon-button danger-hover" onClick={onRemove} aria-label={`${tr(language, 'common.remove')} ${foodLabel(item.name, language)}`}><Icon name="trash" size={17} /></button></div>;
 }
 
 function PageHeader({ language, eyebrow, title, description, action }: { language: Language; eyebrow: string; title: string; description: string; action: ReactNode }) {
@@ -394,8 +425,8 @@ function RecipeDetails({ language, recipe, status, onClose, onEdit, onDelete, on
                   <span className={'ingredient-check ' + (missingNames.has(ingredient.id) ? 'missing' : '')}>
                     {missingNames.has(ingredient.id) ? <Icon name="plus" size={14} /> : <Icon name="check" size={14} />}
                   </span>
-                  <span>{ingredientLabel(ingredient, language)}{ingredient.optional && <small>{tr(language, 'detail.optional')}</small>}</span>
-                  <strong>{formatAmount(ingredient.amount)} {unitLabel(ingredient.unit, language)}</strong>
+                  <span>{ingredientLabel(ingredient, language)}{ingredient.note && <small className="ingredient-note">{ingredient.note}</small>}{ingredient.optional && <small>{tr(language, 'detail.optional')}</small>}</span>
+                  <strong>{ingredientAmountLabel(ingredient, language)}</strong>
                 </div>
               ))}
             </div>
@@ -495,10 +526,10 @@ function RecipeImportModal({ language, onClose, onImported }: { language: Langua
 
 function RecipeEditor({ language, recipe, initialDraft, onClose, onSave }: { language: Language; recipe: Recipe | null; initialDraft?: RecipeDraft; onClose: () => void; onSave: (draft: RecipeDraft) => void }) {
   const display = recipe ? recipeText(recipe, language) : null;
-  const [draft, setDraft] = useState<RecipeDraft>(() => initialDraft ? { ...initialDraft, tags: [...initialDraft.tags], ingredients: initialDraft.ingredients.map((ingredient) => ({ ...ingredient })), steps: [...initialDraft.steps] } : recipe ? { title: display!.title, description: display!.description, minutes: recipe.minutes, servings: recipe.servings, category: display!.category, tags: recipe.tags, accent: recipe.accent, icon: recipe.icon, favorite: recipe.favorite, ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient, name: ingredientLabel(ingredient, language) })), steps: display!.steps, sourceUrl: recipe.sourceUrl, sourceName: recipe.sourceName } : emptyRecipe);
+  const [draft, setDraft] = useState<RecipeDraft>(() => initialDraft ? { ...initialDraft, tags: [...initialDraft.tags], ingredients: initialDraft.ingredients.map((ingredient) => ({ ...ingredient, name: ingredientLabel(ingredient, language) })), steps: [...initialDraft.steps] } : recipe ? { title: display!.title, description: display!.description, minutes: recipe.minutes, servings: recipe.servings, category: display!.category, tags: recipe.tags, accent: recipe.accent, icon: recipe.icon, favorite: recipe.favorite, ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient, name: ingredientLabel(ingredient, language) })), steps: display!.steps, sourceUrl: recipe.sourceUrl, sourceName: recipe.sourceName } : emptyRecipe);
   const [error, setError] = useState('');
   const setField = <K extends keyof RecipeDraft>(field: K, value: RecipeDraft[K]) => setDraft((current) => ({ ...current, [field]: value }));
-  const updateIngredient = (id: string, updates: Partial<Ingredient>) => setDraft((current) => ({ ...current, ingredients: current.ingredients.map((ingredient) => ingredient.id === id ? { ...ingredient, ...updates } : ingredient) }));
+  const updateIngredient = (id: string, updates: Partial<Ingredient>) => setDraft((current) => ({ ...current, ingredients: current.ingredients.map((ingredient) => ingredient.id === id ? { ...ingredient, ...updates, ...(updates.amount !== undefined ? { amountMax: undefined } : {}) } : ingredient) }));
   const updateStep = (index: number, value: string) => setDraft((current) => ({ ...current, steps: current.steps.map((step, stepIndex) => stepIndex === index ? value : step) }));
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -513,7 +544,7 @@ function RecipeEditor({ language, recipe, initialDraft, onClose, onSave }: { lan
 }
 
 function PantryEditor({ language, item, onClose, onSave }: { language: Language; item: PantryItem | null; onClose: () => void; onSave: (draft: PantryDraft) => void }) {
-  const [draft, setDraft] = useState<PantryDraft>(() => item ? { name: foodLabel(item.name, language), quantity: item.quantity, unit: item.unit, category: item.category, expiresAt: item.expiresAt || '' } : emptyPantry);
+  const [draft, setDraft] = useState<PantryDraft>(() => item ? { name: foodLabel(item.name, language), quantity: item.quantity, unit: item.unit, category: item.category, countKind: item.countKind, expiresAt: item.expiresAt || '' } : emptyPantry);
   const [error, setError] = useState('');
   const setField = <K extends keyof PantryDraft>(field: K, value: PantryDraft[K]) => setDraft((current) => ({ ...current, [field]: value }));
   const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!draft.name.trim()) { setError(tr(language, 'form.invalidFoodName')); return; } if (draft.quantity <= 0) { setError(tr(language, 'form.invalidQuantity')); return; } onSave({ ...draft, name: draft.name.trim() }); };
