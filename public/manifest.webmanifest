@@ -4,8 +4,8 @@
   "description": "Planuok patiekalus iš to, ką jau turi namuose.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f7f7f3",
-  "theme_color": "#f7f7f3",
+  "background_color": "#fbf5ed",
+  "theme_color": "#fbf5ed",
   "lang": "lt",
   "icons": [
     {

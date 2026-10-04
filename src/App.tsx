@@ -254,7 +254,7 @@ function App() {
 }
 
 function readVariant(): DesignVariant {
-  if (!isPreviewBuild || typeof window === 'undefined') return 'a';
+  if (!isPreviewBuild || typeof window === 'undefined') return 'c';
   const value = new URLSearchParams(window.location.search).get('variant');
   return value === 'b' || value === 'c' ? value : 'a';
 }
@@ -309,7 +309,7 @@ function PantryFirstHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
   const suggestions = readyRecipes.length ? readyRecipes.slice(0, 3) : recipes.slice(0, 3);
   return <>
     <section className="welcome-block"><p className="eyebrow">{tr(language, 'home.eyebrow')}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="pantry-focus"><div className="pantry-focus-head"><div><p className="eyebrow">{tr(language, 'pantry.eyebrow')}</p><h2>{pantry.length} <span>{tr(language, 'home.stats.pantry')}</span></h2></div><button className="button button-secondary" onClick={() => onChangeTab('pantry')}><Icon name="arrow" size={16} />{tr(language, 'common.viewAll')}</button></div><div className="pantry-chip-list">{pantryPreview.map((item) => <span className="pantry-chip" key={item.id}><b>{foodLabel(item.name, language).charAt(0)}</b>{foodLabel(item.name, language)}<strong>{formatAmount(item.quantity)} {unitLabel(item.unit, language)}</strong></span>)}{!pantryPreview.length && <p className="muted-copy">{tr(language, 'pantry.emptyBody')}</p>}</div></section>
+    <section className="pantry-focus"><div className="pantry-focus-head"><div><p className="eyebrow">{tr(language, 'pantry.eyebrow')}</p><h2>{pantry.length} <span>{tr(language, 'home.stats.pantry')}</span></h2></div><button className="button button-secondary" onClick={() => onChangeTab('pantry')}>{tr(language, 'common.viewAll')} <Icon name="arrow" size={16} /></button></div><div className="pantry-chip-list">{pantryPreview.map((item) => <span className="pantry-chip" key={item.id}><b>{foodLabel(item.name, language).charAt(0)}</b>{foodLabel(item.name, language)}<strong>{formatAmount(item.quantity)} {unitLabel(item.unit, language)}</strong></span>)}{!pantryPreview.length && <p className="muted-copy">{tr(language, 'pantry.emptyBody')}</p>}</div></section>
     <section className="meal-callout"><div><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? recipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2></div><button className="icon-circle" onClick={() => onChangeTab('recipes')} aria-label={tr(language, 'home.readyAction')}><Icon name="arrow" size={18} /></button></section>
     <section className="content-section"><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} /><RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /></section>
     <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
