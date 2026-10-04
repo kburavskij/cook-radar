@@ -52,9 +52,6 @@ const emptyRecipe: RecipeDraft = {
 
 const emptyPantry: PantryDraft = { name: '', quantity: 1, unit: 'pcs', category: 'Produce', expiresAt: '' };
 const emptyShopping: ShoppingDraft = { name: '', amount: 1, unit: 'pcs', category: 'Other' };
-const isPreviewBuild = import.meta.env.DEV || import.meta.env.VITE_DESIGN_PREVIEW === 'true';
-type DesignVariant = 'a' | 'b' | 'c';
-
 type ViewProps = {
   language: Language;
   recipes: Recipe[];
@@ -89,7 +86,6 @@ function App() {
   const [editingPantry, setEditingPantry] = useState<PantryItem | 'new' | null>(null);
   const [showShoppingEditor, setShowShoppingEditor] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [variant, setVariant] = useState<DesignVariant>(() => readVariant());
 
   useEffect(() => saveRecipes(recipes), [recipes]);
   useEffect(() => savePantry(pantry), [pantry]);
@@ -116,18 +112,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isPreviewBuild) return;
-    const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
-      if (event.key === 'ArrowLeft') setVariantFromIndex(-1);
-      if (event.key === 'ArrowRight') setVariantFromIndex(1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
-
-  useEffect(() => {
     const items = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
     const reveal = (item: HTMLElement) => item.classList.add('is-visible');
 
@@ -147,7 +131,7 @@ function App() {
 
     items.forEach((item) => observer.observe(item));
     return () => observer.disconnect();
-  }, [activeTab, language, variant]);
+  }, [activeTab, language]);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -231,16 +215,6 @@ function App() {
     showToast(tr(language, 'toast.shoppingAdded'));
   };
 
-  const setVariantFromIndex = (delta: number) => {
-    const variants: DesignVariant[] = ['a', 'b', 'c'];
-    const currentIndex = variants.indexOf(variant);
-    const next = variants[(currentIndex + delta + variants.length) % variants.length];
-    const url = new URL(window.location.href);
-    url.searchParams.set('variant', next);
-    window.history.replaceState({}, '', url);
-    setVariant(next);
-  };
-
   const viewProps: ViewProps = {
     language, recipes, pantry, shopping, recipeStatus, activeTab, onChangeTab: changeTab,
     onOpenRecipe: setViewingRecipe, onAddMissing: addMissingToShopping, onToggleFavorite: toggleFavorite,
@@ -248,16 +222,14 @@ function App() {
   };
 
   const page = activeTab === 'home'
-    ? variant === 'b' ? <RadarHome {...viewProps} readyRecipes={readyRecipes} />
-      : variant === 'c' ? <PantryFirstHome {...viewProps} readyRecipes={readyRecipes} />
-        : <TodayHome {...viewProps} readyRecipes={readyRecipes} />
+    ? <TodayHome {...viewProps} readyRecipes={readyRecipes} />
     : activeTab === 'recipes'
       ? <RecipesPage {...viewProps} recipes={filteredRecipes} filter={recipeFilter} search={recipeSearch} onFilter={setRecipeFilter} onSearch={setRecipeSearch} />
       : activeTab === 'pantry'
         ? <PantryPage {...viewProps} pantry={filteredPantry} search={pantrySearch} onSearch={setPantrySearch} onAdd={viewProps.onAddFood} onEdit={setEditingPantry} onRemove={removePantryItem} />
         : <ShoppingPage {...viewProps} onToggle={(id) => setShopping((current) => current.map((item) => item.id === id ? { ...item, checked: !item.checked } : item))} onRemove={(id) => setShopping((current) => current.filter((item) => item.id !== id))} onClearChecked={() => setShopping((current) => current.filter((item) => !item.checked))} />;
 
-  return <div className={`app-shell design-${variant}`}>
+  return <div className="app-shell">
     <DesktopRail {...viewProps} pendingCount={pendingShopping.length} />
     <main className="main-content">
       <TopBar {...viewProps} online={online} onChangeLanguage={setLanguage} />
@@ -265,19 +237,12 @@ function App() {
       <div className="page-shell">{page}</div>
     </main>
     <MobileNav {...viewProps} pendingCount={pendingShopping.length} />
-    {isPreviewBuild && <PrototypeSwitcher language={language} variant={variant} onChange={setVariantFromIndex} />}
     {viewingRecipe && <RecipeDetails language={language} recipe={viewingRecipe} status={recipeStatus.get(viewingRecipe.id)!} onClose={() => setViewingRecipe(null)} onEdit={() => { setEditingRecipe(viewingRecipe); setViewingRecipe(null); }} onDelete={() => deleteRecipe(viewingRecipe)} onAddMissing={() => addMissingToShopping(viewingRecipe)} onToggleFavorite={() => toggleFavorite(viewingRecipe)} />}
     {editingRecipe && <RecipeEditor key={editingRecipe === 'new' ? 'new' : editingRecipe.id} language={language} recipe={editingRecipe === 'new' ? null : editingRecipe} onClose={() => setEditingRecipe(null)} onSave={(draft) => saveRecipe(draft, editingRecipe === 'new' ? null : editingRecipe)} />}
     {editingPantry && <PantryEditor key={editingPantry === 'new' ? 'new' : editingPantry.id} language={language} item={editingPantry === 'new' ? null : editingPantry} onClose={() => setEditingPantry(null)} onSave={(draft) => savePantryItem(draft, editingPantry === 'new' ? null : editingPantry)} />}
     {showShoppingEditor && <ShoppingEditor language={language} onClose={() => setShowShoppingEditor(false)} onSave={addShoppingItem} />}
     {toast && <div className="toast" role="status"><Icon name="check" size={18} />{toast}</div>}
   </div>;
-}
-
-function readVariant(): DesignVariant {
-  if (!isPreviewBuild || typeof window === 'undefined') return 'c';
-  const value = new URLSearchParams(window.location.search).get('variant');
-  return value === 'b' || value === 'c' ? value : 'a';
 }
 
 function DesktopRail({ language, activeTab, onChangeTab, pendingCount }: ViewProps & { pendingCount: number }) {
@@ -309,31 +274,6 @@ function TodayHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
     <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
     <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} />{suggestions.length ? <RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /> : <EmptyState language={language} icon="book" title={tr(language, 'home.sectionEmpty')} body={tr(language, 'home.sectionEmptyBody')} action={tr(language, 'common.addRecipe')} onAction={() => onChangeTab('recipes')} />}</section>
     <InfoNote language={language} />
-  </>;
-}
-
-function RadarHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
-  const { language, recipes, pantry, shopping, recipeStatus, readyRecipes, onOpenRecipe, onAddMissing, onChangeTab } = props;
-  const suggestions = readyRecipes.length ? readyRecipes.slice(0, 3) : recipes.slice(0, 3);
-  return <>
-    <section className="welcome-block compact-welcome" data-reveal><p className="eyebrow">{tr(language, 'home.eyebrow')}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="radar-panel" data-reveal><div className="radar-art" aria-hidden="true"><span className="radar-ring ring-one" /><span className="radar-ring ring-two" /><span className="radar-ring ring-three" /><span className="radar-core">{readyRecipes.length}</span>{readyRecipes.slice(0, 3).map((recipe, index) => <span className={`radar-dot dot-${index + 1}`} key={recipe.id}>{recipe.icon}</span>)}</div><div className="radar-copy"><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? formatReadyRecipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2><p>{readyRecipes.length ? tr(language, 'home.readyBody') : tr(language, 'home.readyEmptyBody')}</p></div></section>
-    <div className="quick-actions" data-reveal><button className="quick-action primary" onClick={() => onChangeTab('recipes')}><span><Icon name="search" size={20} /></span>{tr(language, 'home.readyAction')}</button><button className="quick-action" onClick={() => onChangeTab('pantry')}><span><Icon name="plus" size={20} /></span>{tr(language, 'common.addFood')}</button></div>
-    <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
-    <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} /><RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /></section>
-  </>;
-}
-
-function PantryFirstHome({ ...props }: ViewProps & { readyRecipes: Recipe[] }) {
-  const { language, recipes, pantry, shopping, recipeStatus, readyRecipes, onOpenRecipe, onAddMissing, onChangeTab } = props;
-  const pantryPreview = pantry.slice(0, 5);
-  const suggestions = readyRecipes.length ? readyRecipes.slice(0, 3) : recipes.slice(0, 3);
-  return <>
-    <section className="welcome-block" data-reveal><p className="eyebrow">{tr(language, 'home.eyebrow')}</p><h1>{tr(language, 'home.title')}</h1><p className="lede">{tr(language, 'home.lede')}</p></section>
-    <section className="meal-callout" data-reveal><div><p className="eyebrow">{tr(language, 'home.readyEyebrow')}</p><h2>{readyRecipes.length ? formatReadyRecipeCount(readyRecipes.length, language) : tr(language, 'home.readyEmptyTitle')}</h2></div><button className="button button-primary meal-action" onClick={() => onChangeTab('recipes')}>{tr(language, 'home.readyAction')} <span className="button-icon"><Icon name="arrow" size={16} /></span></button></section>
-    <section className="pantry-focus" data-reveal><div className="pantry-focus-head"><div><p className="eyebrow">{tr(language, 'pantry.eyebrow')}</p><h2>{pantry.length} <span>{countWord(pantry.length, 'product', language)}</span></h2></div><button className="button button-secondary" onClick={() => onChangeTab('pantry')}>{tr(language, 'common.viewAll')} <Icon name="arrow" size={16} /></button></div><div className="pantry-chip-list">{pantryPreview.map((item) => <span className="pantry-chip" key={item.id}><b>{foodLabel(item.name, language).charAt(0)}</b>{foodLabel(item.name, language)}<strong>{formatAmount(item.quantity)} {unitLabel(item.unit, language)}</strong></span>)}{!pantryPreview.length && <p className="muted-copy">{tr(language, 'pantry.emptyBody')}</p>}</div></section>
-    <section className="content-section" data-reveal><SectionHeading language={language} eyebrow="home.sectionTitle" title={tr(language, 'home.sectionTitle')} actionLabel={tr(language, 'common.viewAll')} onAction={() => onChangeTab('recipes')} /><RecipeList language={language} recipes={suggestions} recipeStatus={recipeStatus} onOpenRecipe={onOpenRecipe} onAddMissing={onAddMissing} /></section>
-    <SummaryStrip language={language} pantry={pantry.length} recipes={recipes.length} shopping={shopping.filter((item) => !item.checked).length} onChangeTab={onChangeTab} />
   </>;
 }
 
@@ -391,10 +331,6 @@ function EmptyState({ language, icon, title, body, action, onAction }: { languag
 
 function InfoNote({ language }: { language: Language }) {
   return <section className="tip-panel" data-reveal><span className="tip-icon"><Icon name="spark" size={20} /></span><div><strong>{tr(language, 'home.tipTitle')}</strong><p>{tr(language, 'home.tipBody')}</p></div></section>;
-}
-
-function PrototypeSwitcher({ language, variant, onChange }: { language: Language; variant: DesignVariant; onChange: (delta: number) => void }) {
-  return <div className="prototype-switcher" aria-label={tr(language, 'preview.label')}><button onClick={() => onChange(-1)} aria-label={tr(language, 'preview.previous')}>‹</button><span>{tr(language, `preview.${variant}`)}</span><button onClick={() => onChange(1)} aria-label={tr(language, 'preview.next')}>›</button></div>;
 }
 
 function RecipeDetails({ language, recipe, status, onClose, onEdit, onDelete, onAddMissing, onToggleFavorite }: { language: Language; recipe: Recipe; status: ReturnType<typeof getRecipeStatus>; onClose: () => void; onEdit: () => void; onDelete: () => void; onAddMissing: () => void; onToggleFavorite: () => void }) {

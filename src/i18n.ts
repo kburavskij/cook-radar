@@ -130,12 +130,6 @@ const text: Record<Language, Record<string, string>> = {
     'detail.haveEverything': 'Turi visas sudedamąsias dalis',
     'detail.steps': 'žingsniai',
     'detail.servings': 'porc.',
-    'preview.label': 'Dizaino variantų perjungiklis',
-    'preview.a': 'A · Šiandienos planas',
-    'preview.b': 'B · Radaras',
-    'preview.c': 'C · Atsargos pirmiausia',
-    'preview.previous': 'Ankstesnis variantas',
-    'preview.next': 'Kitas variantas',
   },
   en: {
     'app.title': 'Cook Radar | Cook with what you have',
@@ -264,12 +258,6 @@ const text: Record<Language, Record<string, string>> = {
     'detail.haveEverything': 'You have everything',
     'detail.steps': 'steps',
     'detail.servings': 'servings',
-    'preview.label': 'Design prototype switcher',
-    'preview.a': 'A · Today first',
-    'preview.b': 'B · Radar',
-    'preview.c': 'C · Pantry first',
-    'preview.previous': 'Previous variation',
-    'preview.next': 'Next variation',
   },
 };
 
