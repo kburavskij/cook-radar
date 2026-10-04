@@ -3,6 +3,7 @@ import { loadPantry, loadRecipes, loadShopping, savePantry, saveRecipes, saveSho
 import type { Ingredient, PantryCategory, PantryDraft, PantryItem, Recipe, RecipeDraft, ShoppingDraft, ShoppingItem, Tab, Unit } from './types';
 import { UNITS } from './types';
 import { categoryLabel, countWord, foodLabel, formatMissingAdded, formatMissingCount, formatReadyRecipeCount, formatShoppingOpenCount, formatStepCount, ingredientLabel, recipeText, tr, unitLabel, type Language } from './i18n';
+import { getRecipeImportSource, importRecipeFromUrl, RECIPE_IMPORT_SOURCES, RecipeImportError } from './recipeImport';
 import { addOrMergeShopping, formatAmount, getMissingIngredients, getRecipeStatus, makeId, normalize } from './utils';
 
 type IconName =
@@ -85,6 +86,9 @@ function App() {
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
   const [editingPantry, setEditingPantry] = useState<PantryItem | 'new' | null>(null);
   const [showShoppingEditor, setShowShoppingEditor] = useState(false);
+  const [showRecipeSourceChooser, setShowRecipeSourceChooser] = useState(false);
+  const [showRecipeImport, setShowRecipeImport] = useState(false);
+  const [pendingRecipeDraft, setPendingRecipeDraft] = useState<RecipeDraft | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => saveRecipes(recipes), [recipes]);
@@ -177,6 +181,23 @@ function App() {
       showToast(tr(language, 'toast.recipeSaved'));
     }
     setEditingRecipe(null);
+    setPendingRecipeDraft(null);
+  };
+
+  const openRecipeSourceChooser = () => setShowRecipeSourceChooser(true);
+  const openManualRecipeEditor = () => {
+    setShowRecipeSourceChooser(false);
+    setPendingRecipeDraft(null);
+    setEditingRecipe('new');
+  };
+  const openRecipeImport = () => {
+    setShowRecipeSourceChooser(false);
+    setShowRecipeImport(true);
+  };
+  const openImportedRecipeEditor = (draft: RecipeDraft) => {
+    setShowRecipeImport(false);
+    setPendingRecipeDraft(draft);
+    setEditingRecipe('new');
   };
 
   const deleteRecipe = (recipe: Recipe) => {
@@ -218,7 +239,7 @@ function App() {
   const viewProps: ViewProps = {
     language, recipes, pantry, shopping, recipeStatus, activeTab, onChangeTab: changeTab,
     onOpenRecipe: setViewingRecipe, onAddMissing: addMissingToShopping, onToggleFavorite: toggleFavorite,
-    onAddRecipe: () => setEditingRecipe('new'), onAddFood: () => setEditingPantry('new'), onAddShopping: () => setShowShoppingEditor(true),
+    onAddRecipe: openRecipeSourceChooser, onAddFood: () => setEditingPantry('new'), onAddShopping: () => setShowShoppingEditor(true),
   };
 
   const page = activeTab === 'home'
@@ -238,7 +259,9 @@ function App() {
     </main>
     <MobileNav {...viewProps} pendingCount={pendingShopping.length} />
     {viewingRecipe && <RecipeDetails language={language} recipe={viewingRecipe} status={recipeStatus.get(viewingRecipe.id)!} onClose={() => setViewingRecipe(null)} onEdit={() => { setEditingRecipe(viewingRecipe); setViewingRecipe(null); }} onDelete={() => deleteRecipe(viewingRecipe)} onAddMissing={() => addMissingToShopping(viewingRecipe)} onToggleFavorite={() => toggleFavorite(viewingRecipe)} />}
-    {editingRecipe && <RecipeEditor key={editingRecipe === 'new' ? 'new' : editingRecipe.id} language={language} recipe={editingRecipe === 'new' ? null : editingRecipe} onClose={() => setEditingRecipe(null)} onSave={(draft) => saveRecipe(draft, editingRecipe === 'new' ? null : editingRecipe)} />}
+    {showRecipeSourceChooser && <RecipeSourceChooser language={language} onClose={() => setShowRecipeSourceChooser(false)} onImport={openRecipeImport} onManual={openManualRecipeEditor} />}
+    {showRecipeImport && <RecipeImportModal language={language} onClose={() => setShowRecipeImport(false)} onImported={openImportedRecipeEditor} />}
+    {editingRecipe && <RecipeEditor key={editingRecipe === 'new' ? pendingRecipeDraft ? 'imported' : 'new' : editingRecipe.id} language={language} recipe={editingRecipe === 'new' ? null : editingRecipe} initialDraft={pendingRecipeDraft ?? undefined} onClose={() => { setEditingRecipe(null); setPendingRecipeDraft(null); }} onSave={(draft) => saveRecipe(draft, editingRecipe === 'new' ? null : editingRecipe)} />}
     {editingPantry && <PantryEditor key={editingPantry === 'new' ? 'new' : editingPantry.id} language={language} item={editingPantry === 'new' ? null : editingPantry} onClose={() => setEditingPantry(null)} onSave={(draft) => savePantryItem(draft, editingPantry === 'new' ? null : editingPantry)} />}
     {showShoppingEditor && <ShoppingEditor language={language} onClose={() => setShowShoppingEditor(false)} onSave={addShoppingItem} />}
     {toast && <div className="toast" role="status"><Icon name="check" size={18} />{toast}</div>}
@@ -352,6 +375,7 @@ function RecipeDetails({ language, recipe, status, onClose, onEdit, onDelete, on
           <div>
             <p>{display.description}</p>
             <div className="tag-row">{display.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>
+            {recipe.sourceUrl && <p className="source-attribution"><span>{tr(language, 'detail.source')}: {recipe.sourceName || new URL(recipe.sourceUrl).hostname}</span><a href={recipe.sourceUrl} target="_blank" rel="noreferrer">{tr(language, 'detail.viewSource')}</a></p>}
           </div>
           <button className={'favorite-large ' + (recipe.favorite ? 'is-favorite' : '')} onClick={onToggleFavorite} aria-label={tr(language, 'recipes.favorites')}>
             <Icon name="heart" size={20} />
@@ -404,9 +428,74 @@ function ModalShell({ language, title, eyebrow, children, onClose, wide = false 
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className={`modal ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}><div className="modal-header">{eyebrow && <p className="eyebrow">{eyebrow}</p>}<button className="icon-button modal-close" onClick={onClose} aria-label={tr(language, 'common.close')}><Icon name="close" size={21} /></button><h2>{title}</h2></div>{children}</section></div>;
 }
 
-function RecipeEditor({ language, recipe, onClose, onSave }: { language: Language; recipe: Recipe | null; onClose: () => void; onSave: (draft: RecipeDraft) => void }) {
+function RecipeSourceChooser({ language, onClose, onImport, onManual }: { language: Language; onClose: () => void; onImport: () => void; onManual: () => void }) {
+  return <ModalShell language={language} title={tr(language, 'recipeSource.title')} eyebrow={tr(language, 'recipes.title')} onClose={onClose}>
+    <div className="source-picker">
+      <p className="source-picker-intro">{tr(language, 'recipeSource.description')}</p>
+      <div className="source-choice-list">
+        <button type="button" className="source-choice" onClick={onImport}>
+          <span className="source-choice-icon"><Icon name="globe" size={22} /></span>
+          <span className="source-choice-copy"><strong>{tr(language, 'recipeSource.import')}</strong><small>{tr(language, 'recipeSource.importDescription')}</small></span>
+          <Icon name="arrow" size={18} />
+        </button>
+        <button type="button" className="source-choice" onClick={onManual}>
+          <span className="source-choice-icon is-quiet"><Icon name="edit" size={22} /></span>
+          <span className="source-choice-copy"><strong>{tr(language, 'recipeSource.manual')}</strong><small>{tr(language, 'recipeSource.manualDescription')}</small></span>
+          <Icon name="arrow" size={18} />
+        </button>
+      </div>
+      <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>{tr(language, 'common.cancel')}</button></div>
+    </div>
+  </ModalShell>;
+}
+
+function RecipeImportModal({ language, onClose, onImported }: { language: Language; onClose: () => void; onImported: (draft: RecipeDraft) => void }) {
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const source = getRecipeImportSource(url);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const draft = await importRecipeFromUrl(url);
+      setLoading(false);
+      onImported(draft);
+    } catch (caught) {
+      const code = caught instanceof RecipeImportError ? caught.code : 'generic';
+      setLoading(false);
+      const translationKey = ({
+        'invalid-url': 'invalidUrl',
+        'unsupported-source': 'unsupported',
+        'not-found': 'notFound',
+        network: 'network',
+        parse: 'parse',
+        restricted: 'restricted',
+        generic: 'generic',
+      } as Record<string, string>)[code] ?? 'generic';
+      setError(tr(language, `import.error.${translationKey}`));
+    }
+  };
+
+  return <ModalShell language={language} title={tr(language, 'import.title')} eyebrow={tr(language, 'recipes.title')} onClose={onClose}>
+    <form className="editor-form import-form" onSubmit={submit}>
+      <p className="import-description">{tr(language, 'import.description')}</p>
+      <label className="import-url-field"><span>{tr(language, 'import.urlLabel')}</span><input autoFocus type="url" inputMode="url" value={url} onChange={(event) => { setUrl(event.target.value); setError(''); }} placeholder={tr(language, 'import.urlPlaceholder')} aria-label={tr(language, 'import.urlLabel')} aria-invalid={Boolean(error)} aria-describedby={error ? 'import-help import-error' : 'import-help'} /></label>
+      <p id="import-help" className="import-help">{source ? `${tr(language, 'import.sources')}: ${source.label}` : tr(language, 'import.sources')}</p>
+      <div className="supported-source-list" aria-label={tr(language, 'import.sources')}>{RECIPE_IMPORT_SOURCES.map((supported) => <span className={source?.id === supported.id ? 'is-selected' : ''} key={supported.id}>{supported.label}</span>)}</div>
+      <p className="import-note"><Icon name="info" size={16} />{tr(language, 'import.sourceLanguage')}</p>
+      <p className="import-usage-note">{tr(language, 'import.usageNotice')}</p>
+      {error && <p id="import-error" className="form-error" role="alert"><Icon name="info" size={16} />{error}</p>}
+      <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose}>{tr(language, 'common.cancel')}</button><button type="submit" className="button button-primary" disabled={loading || !url.trim()}>{loading ? tr(language, 'import.loading') : tr(language, 'import.submit')} {!loading && <Icon name="arrow" size={17} />}</button></div>
+    </form>
+  </ModalShell>;
+}
+
+function RecipeEditor({ language, recipe, initialDraft, onClose, onSave }: { language: Language; recipe: Recipe | null; initialDraft?: RecipeDraft; onClose: () => void; onSave: (draft: RecipeDraft) => void }) {
   const display = recipe ? recipeText(recipe, language) : null;
-  const [draft, setDraft] = useState<RecipeDraft>(() => recipe ? { title: display!.title, description: display!.description, minutes: recipe.minutes, servings: recipe.servings, category: display!.category, tags: recipe.tags, accent: recipe.accent, icon: recipe.icon, favorite: recipe.favorite, ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient, name: ingredientLabel(ingredient, language) })), steps: display!.steps } : emptyRecipe);
+  const [draft, setDraft] = useState<RecipeDraft>(() => initialDraft ? { ...initialDraft, tags: [...initialDraft.tags], ingredients: initialDraft.ingredients.map((ingredient) => ({ ...ingredient })), steps: [...initialDraft.steps] } : recipe ? { title: display!.title, description: display!.description, minutes: recipe.minutes, servings: recipe.servings, category: display!.category, tags: recipe.tags, accent: recipe.accent, icon: recipe.icon, favorite: recipe.favorite, ingredients: recipe.ingredients.map((ingredient) => ({ ...ingredient, name: ingredientLabel(ingredient, language) })), steps: display!.steps, sourceUrl: recipe.sourceUrl, sourceName: recipe.sourceName } : emptyRecipe);
   const [error, setError] = useState('');
   const setField = <K extends keyof RecipeDraft>(field: K, value: RecipeDraft[K]) => setDraft((current) => ({ ...current, [field]: value }));
   const updateIngredient = (id: string, updates: Partial<Ingredient>) => setDraft((current) => ({ ...current, ingredients: current.ingredients.map((ingredient) => ingredient.id === id ? { ...ingredient, ...updates } : ingredient) }));

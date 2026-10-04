@@ -20,11 +20,15 @@ continues without a connection.
 ## First slice
 
 - Browse recipes and filter to meals that can be made now.
+- Import recipes from a link or add them manually, then review the imported data.
 - Add, edit, and remove recipes with metric ingredients.
 - Track pantry quantities and see what each recipe is missing.
 - Add missing ingredients to a local shopping list.
 - Install as a PWA on iPhone or desktop.
 
-The next integration is receipt import. It should stay behind an explicit
-connection to a supermarket account, then normalize receipt lines into pantry
-items before changing stock.
+The importer currently supports RecipeTin Eats, Love & Lemons, Budget Bytes,
+Minimalist Baker, Cookie and Kate, and BBC Good Food. It keeps imported recipe
+text in the source language so you can review and edit it before saving.
+
+The current recipe-source research is in
+[`research/recipe-import-source-audit.md`](research/recipe-import-source-audit.md).

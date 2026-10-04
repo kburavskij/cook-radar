@@ -85,7 +85,7 @@ Other compact labels worth changing:
 
 These three are editorial UI recommendations. The cited VLKK heading guidance supports sentence-case source strings, but it does not prescribe a mobile button label.
 
-`src/App.tsx:396` also contains the literal English accessibility label `Design prototype switcher`. It is used only by the design-preview build, but if that preview is exposed to Lithuanian users it should be localized or removed from the production bundle. This is an editorial accessibility recommendation, not a Lithuanian dictionary finding.
+The design-preview switcher mentioned in the original audit has since been removed from the production bundle. This closes the accessibility issue described here.
 
 ### 5. Keep the verified units and food terms
 

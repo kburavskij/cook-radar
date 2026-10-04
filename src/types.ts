@@ -17,6 +17,8 @@ export type Recipe = {
   favorite: boolean;
   ingredients: Ingredient[];
   steps: string[];
+  sourceUrl?: string;
+  sourceName?: string;
   createdAt: string;
 };
 
