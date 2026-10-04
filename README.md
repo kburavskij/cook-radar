@@ -4,6 +4,8 @@ An offline-first PWA for deciding what to cook from the food already at home.
 
 Live app: <https://kburavskij.github.io/cook-radar/>
 
+Design comparison: [variant A, Today first](https://kburavskij.github.io/cook-radar/design-preview/?variant=a), [variant B, Radar](https://kburavskij.github.io/cook-radar/design-preview/?variant=b), or [variant C, Pantry first](https://kburavskij.github.io/cook-radar/design-preview/?variant=c).
+
 ## Run locally
 
 ```bash

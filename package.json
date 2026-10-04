@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:preview": "tsc -b && VITE_DESIGN_PREVIEW=true vite build --outDir dist/design-preview && cp public/icon.svg public/manifest.webmanifest public/sw.js dist/design-preview/",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false"
   },

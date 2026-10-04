@@ -1,8 +1,9 @@
 import type { Ingredient, PantryItem, Recipe, ShoppingItem, Unit } from './types';
+import { normalizeFoodName } from './i18n';
 
 export const makeId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
-export const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+export const normalize = normalizeFoodName;
 
 const family = (unit: Unit) => {
   if (unit === 'g' || unit === 'kg') return 'weight';
